@@ -2,10 +2,10 @@
 
 import { useUserStore } from "@/store/useUserStore";
 import { GitBranch, Star, Search, Filter, Play, Loader2 } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/services/api";
-import { useToast } from "@/components/ui/Toast";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface Repository {
   id: number;
@@ -17,8 +17,7 @@ interface Repository {
 
 export default function RepositoriesPage() {
   const { isAuthenticated } = useUserStore();
-  const { addToast } = useToast();
-  const queryClient = useQueryClient();
+  const router = useRouter();
   const [search, setSearch] = useState("");
 
   // 저장소 목록 조회
@@ -31,20 +30,6 @@ export default function RepositoriesPage() {
     enabled: isAuthenticated,
   });
 
-  // 분석 트리거 (Sync)
-  const syncMutation = useMutation({
-    mutationFn: async (githubRepoId: string) => {
-      const { data } = await api.post(`/collection/sync/${githubRepoId}`);
-      return data;
-    },
-    onSuccess: () => {
-      addToast("분석이 시작되었습니다. 잠시 후 대시보드에서 확인해 주세요.", "success");
-      queryClient.invalidateQueries({ queryKey: ["repositories"] });
-    },
-    onError: () => {
-      addToast("분석 요청 중 오류가 발생했습니다.", "error");
-    }
-  });
 
   if (!isAuthenticated) return null;
 
@@ -117,15 +102,10 @@ export default function RepositoriesPage() {
               </div>
 
               <button 
-                onClick={() => syncMutation.mutate(repo.githubRepoId)}
-                disabled={syncMutation.isPending}
-                className="w-full mt-4 flex items-center justify-center gap-2 py-2.5 bg-secondary text-secondary-foreground rounded-xl hover:bg-primary hover:text-primary-foreground transition-all font-semibold text-sm disabled:opacity-50"
+                onClick={() => router.push(`/repositories/${repo.githubRepoId}/analyze?fullName=${encodeURIComponent(repo.fullName)}`)}
+                className="w-full mt-4 flex items-center justify-center gap-2 py-2.5 bg-secondary text-secondary-foreground rounded-xl hover:bg-primary hover:text-primary-foreground transition-all font-semibold text-sm"
               >
-                {syncMutation.isPending ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : (
-                  <Play size={14} fill="currentColor" />
-                )}
+                <Play size={14} fill="currentColor" />
                 {repo.lastSyncTime ? "다시 분석하기" : "분석 시작"}
               </button>
             </div>

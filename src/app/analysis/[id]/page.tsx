@@ -2,39 +2,35 @@
 
 import { useParams } from "next/navigation";
 import { useAnalysisStatus } from "@/hooks/useAnalysisStatus";
+import { ReportView } from "@/components/analysis/ReportView";
+import { analysisService } from "@/services/analysis";
+import { useUserStore } from "@/store/useUserStore";
+import { useState, useEffect } from "react";
 import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer 
-} from "recharts";
-import { CheckCircle2, AlertCircle, Loader2, MessageSquare, BrainCircuit } from "lucide-react";
-
-// 가상의 리포트 데이터
-const mockReport = {
-  summary: "사용자는 매우 논리적이고 구조적인 리뷰 스타일을 가지고 있습니다. 코드의 성능 최적화에 민감하며, 가독성 개선을 위한 구체적인 대안을 제시하는 경향이 있습니다.",
-  metrics: [
-    { name: "수용성", score: 78 },
-    { name: "논리성", score: 92 },
-    { name: "친절도", score: 65 },
-    { name: "정확성", score: 88 },
-  ],
-  trends: [
-    { date: "03/25", PRs: 4, Comments: 12 },
-    { date: "03/26", PRs: 2, Comments: 5 },
-    { date: "03/27", PRs: 6, Comments: 18 },
-  ]
-};
+  CheckCircle2, 
+  AlertCircle, 
+  Loader2, 
+  Star, 
+  Share2, 
+  Copy,
+  ExternalLink 
+} from "lucide-react";
+import { useToast } from "@/components/ui/Toast";
 
 export default function AnalysisDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { isLoading } = useAnalysisStatus(id);
+  const { data, isLoading, error } = useAnalysisStatus(id);
+  const { user } = useUserStore();
+  const { addToast } = useToast();
+  const [isRepresentative, setIsRepresentative] = useState(false);
+  const [isShared, setIsShared] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  // 실제 데이터가 없을 경우 Mock 데이터 사용 (데모용)
-  const report = mockReport;
+  useEffect(() => {
+    if (data?.result) {
+      setIsShared(data.result.isShared);
+    }
+  }, [data]);
 
   if (isLoading) {
     return (
@@ -45,6 +41,65 @@ export default function AnalysisDetailPage() {
     );
   }
 
+  if (error || !data) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
+        <AlertCircle className="w-10 h-10 text-destructive" />
+        <p className="text-muted-foreground">분석 데이터를 불러오지 못했습니다.</p>
+      </div>
+    );
+  }
+
+  const report = data.result;
+  if (!report) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+        <p className="text-muted-foreground">분석이 진행 중입니다... ({data.progress}%)</p>
+      </div>
+    );
+  }
+
+  const handleSetRepresentative = async () => {
+    if (isUpdating) return;
+    setIsUpdating(true);
+    try {
+      await analysisService.setRepresentative(Number(id));
+      setIsRepresentative(true);
+      addToast("대표 리포트로 설정되었습니다.", "success");
+    } catch {
+      addToast("대표 설정에 실패했습니다.", "error");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleToggleShare = async () => {
+    if (isUpdating) return;
+    setIsUpdating(true);
+    const newStatus = !isShared;
+    try {
+      await analysisService.toggleSharing(Number(id), newStatus);
+      setIsShared(newStatus);
+      addToast(
+        newStatus ? "공유가 활성화되었습니다." : "공유가 비활성화되었습니다.",
+        "success"
+      );
+    } catch {
+      addToast("공유 상태 변경에 실패했습니다.", "error");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const copyToClipboard = () => {
+    const shareUrl = `${window.location.origin}/public/${user?.username}`;
+    navigator.clipboard.writeText(shareUrl);
+    addToast("공유 링크가 복사되었습니다.", "success");
+  };
+
+  const shareUrl = `${window.location.origin}/public/${user?.username}`;
+
   return (
     <div className="p-8 space-y-8 animate-in fade-in duration-500">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -54,83 +109,63 @@ export default function AnalysisDetailPage() {
             <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-500/10 text-green-500 flex items-center gap-1">
               <CheckCircle2 size={12} /> 완료
             </span>
+            {isRepresentative && (
+              <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-500/10 text-yellow-600 flex items-center gap-1">
+                <Star size={12} fill="currentColor" /> 대표 설정됨
+              </span>
+            )}
           </div>
-          <p className="text-muted-foreground">ID: {id} · 2026년 4월 1일 분석</p>
+          <p className="text-muted-foreground">
+            ID: {id} · {new Date(report.syncTime).toLocaleString("ko-KR")} 분석
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleSetRepresentative}
+            disabled={isUpdating}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all text-sm font-medium ${
+              isRepresentative 
+                ? "bg-yellow-50 border-yellow-200 text-yellow-700 shadow-sm" 
+                : "bg-white hover:bg-gray-50 text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            <Star size={18} fill={isRepresentative ? "currentColor" : "none"} />
+            {isRepresentative ? "대표 리포트" : "대표로 설정"}
+          </button>
+          
+          <button
+            onClick={handleToggleShare}
+            disabled={isUpdating}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all text-sm font-medium ${
+              isShared 
+                ? "bg-blue-50 border-blue-200 text-blue-700 shadow-sm" 
+                : "bg-white hover:bg-gray-50 text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            <Share2 size={18} />
+            {isShared ? "공유 중" : "공유하기"}
+          </button>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* 왼쪽: 요약 및 지표 */}
-        <div className="lg:col-span-2 space-y-8">
-          <section className="p-6 rounded-2xl border bg-card space-y-4">
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              <BrainCircuit className="text-purple-500" />
-              AI 분석 요약
-            </h2>
-            <p className="text-lg leading-relaxed">{report.summary}</p>
-          </section>
-
-          <section className="p-6 rounded-2xl border bg-card space-y-6">
-            <h2 className="text-xl font-bold">정량 지표 상세</h2>
-            <div className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={report.metrics} layout="vertical" margin={{ left: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="var(--border)" />
-                  <XAxis type="number" domain={[0, 100]} hide />
-                  <YAxis dataKey="name" type="category" tick={{ fill: "var(--foreground)", fontSize: 13 }} width={80} />
-                  <Tooltip 
-                    cursor={{ fill: "transparent" }}
-                    contentStyle={{ backgroundColor: "var(--card)", borderRadius: "8px", border: "1px solid var(--border)" }}
-                  />
-                  <Bar dataKey="score" fill="url(#colorGradient)" radius={[0, 4, 4, 0]} barSize={24} />
-                  <defs>
-                    <linearGradient id="colorGradient" x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stopColor="#6366f1" />
-                      <stop offset="100%" stopColor="#a855f7" />
-                    </linearGradient>
-                  </defs>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </section>
+      {isShared && user && (
+        <div className="p-4 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-between gap-4 animate-in slide-in-from-top-4 duration-500">
+          <div className="flex items-center gap-2 text-sm text-blue-700 overflow-hidden">
+            <ExternalLink size={16} className="shrink-0" />
+            <span className="font-semibold whitespace-nowrap">공개 공유 링크:</span>
+            <code className="bg-white/50 px-2 py-0.5 rounded border border-blue-200 truncate">{shareUrl}</code>
+          </div>
+          <button 
+            onClick={copyToClipboard}
+            className="flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors shrink-0"
+          >
+            <Copy size={16} /> 복사
+          </button>
         </div>
+      )}
 
-        {/* 오른쪽: 세부 정보 카드 */}
-        <div className="space-y-6">
-          <section className="p-6 rounded-2xl border bg-card space-y-4">
-            <h2 className="font-bold flex items-center gap-2">
-              <MessageSquare className="text-blue-500" size={20} />
-              분석 대상 통계
-            </h2>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">총 PR 수</span>
-                <span className="font-bold">12개</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">분석된 코멘트</span>
-                <span className="font-bold">48개</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">정제된 데이터</span>
-                <span className="font-bold">35개</span>
-              </div>
-            </div>
-          </section>
-
-          <section className="p-6 rounded-2xl border bg-yellow-500/5 border-yellow-500/20 space-y-4">
-            <h2 className="font-bold flex items-center gap-2 text-yellow-600 dark:text-yellow-500">
-              <AlertCircle size={20} />
-              개선 제안
-            </h2>
-            <ul className="text-sm space-y-2 text-muted-foreground leading-relaxed">
-              <li>• 리뷰 시 &quot;친절도&quot; 점수가 평균보다 낮습니다.</li>
-              <li>• 이모지 사용이나 칭찬의 말을 섞어보세요.</li>
-              <li>• 복잡한 코드 설계에 대한 설명력을 높이면 좋습니다.</li>
-            </ul>
-          </section>
-        </div>
-      </div>
+      <ReportView report={report} showStatus={false} />
     </div>
   );
 }

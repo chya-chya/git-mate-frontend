@@ -1,14 +1,15 @@
 "use client";
 
 import { useUserStore } from "@/store/useUserStore";
-import { LayoutDashboard, GitBranch, Settings, History } from "lucide-react";
+import { LayoutDashboard, GitBranch, Settings, FileText, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Repositories", href: "/repositories", icon: GitBranch },
-  { name: "History", href: "/history", icon: History },
+  { name: "Analysis Reports", href: "/history", icon: FileText },
+  { name: "Public", href: "/public", icon: Users },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 

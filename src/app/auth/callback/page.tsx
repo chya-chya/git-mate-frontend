@@ -1,23 +1,30 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUserStore } from "@/store/useUserStore";
 import { Loader2 } from "lucide-react";
 
-export default function AuthCallbackPage() {
+function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { setAccessToken, setUser } = useUserStore();
+  const { setAccessToken, setRefreshToken, setUser } = useUserStore();
 
   useEffect(() => {
     const accessToken = searchParams.get("access_token");
+    const refreshToken = searchParams.get("refresh_token");
     const username = searchParams.get("username");
     
     if (accessToken) {
       // 1. 토큰 및 사용자 정보 저장
       localStorage.setItem("access_token", accessToken);
       setAccessToken(accessToken);
+      
+      if (refreshToken) {
+        localStorage.setItem("refresh_token", refreshToken);
+        setRefreshToken(refreshToken);
+      }
+
       if (username) {
         setUser({ id: "0", githubId: "0", username });
       }
@@ -29,7 +36,7 @@ export default function AuthCallbackPage() {
       console.error("Authentication failed: No access token found");
       router.replace("/?error=auth_failed");
     }
-  }, [searchParams, router, setAccessToken]);
+  }, [searchParams, router, setAccessToken, setRefreshToken, setUser]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -41,3 +48,17 @@ export default function AuthCallbackPage() {
     </div>
   );
 }
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+        <p className="text-muted-foreground">인증 정보를 확인하고 있습니다...</p>
+      </div>
+    }>
+      <AuthCallbackContent />
+    </Suspense>
+  );
+}
+

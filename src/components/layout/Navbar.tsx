@@ -4,12 +4,21 @@ import { useUserStore } from "@/store/useUserStore";
 import { Moon, Sun, GitBranch } from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, useEffect, ReactNode } from "react";
 
-export default function Navbar() {
+export default function Navbar({ children }: { children?: ReactNode }) {
   const { user, isAuthenticated, logout } = useUserStore();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
+  const isPublicPage = pathname?.startsWith("/public");
+
+  const handleLogout = () => {
+    logout();
+    router.push("/");
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -24,9 +33,17 @@ export default function Navbar() {
               Git-Mate
             </span>
           </Link>
+          {isPublicPage && (
+            <span className="text-muted-foreground/50 font-light hidden xs:inline-flex items-center gap-2">
+              <span className="h-4 w-[1px] bg-border mx-1" />
+              <span className="text-xs tracking-widest font-medium opacity-70">PUBLIC</span>
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-4">
+          {children}
+          
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className="p-2 rounded-md hover:bg-accent transition-colors"
@@ -42,7 +59,7 @@ export default function Navbar() {
                 {user?.username}
               </span>
               <button
-                onClick={logout}
+                onClick={handleLogout}
                 className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
               >
                 Logout
