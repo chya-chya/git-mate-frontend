@@ -5,7 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { api } from "@/services/api";
 import { useToast } from "@/components/ui/Toast";
-import { Loader2, Coins, ArrowRight, X, AlertTriangle, ShieldCheck } from "lucide-react";
+import { Loader2, Coins, ArrowRight, X, AlertTriangle, ShieldCheck, Bot, Sparkles } from "lucide-react";
 import { getErrorMessage } from "@/utils/error";
 import { Suspense } from "react";
 
@@ -74,6 +74,59 @@ function AnalyzePreviewContent() {
   
   const isNotEnoughTokens = currentTokens < actualTokensNeeded;
   const isZeroPr = actualPrCount === 0 && !isEstimateLoading;
+
+  if (syncMutation.isPending) {
+    return (
+      <div className="max-w-2xl mx-auto p-6 md:p-12 min-h-[60vh] flex flex-col items-center justify-center space-y-8 animate-in fade-in zoom-in duration-700">
+        <div className="relative w-full max-w-md mx-auto">
+          {/* Glowing background effect */}
+          <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 animate-pulse"></div>
+          
+          <div className="relative bg-card border border-primary/20 shadow-2xl rounded-3xl p-10 flex flex-col items-center text-center space-y-6">
+            
+            {/* Animated Icons Container */}
+            <div className="relative flex items-center justify-center w-24 h-24">
+              <div className="absolute inset-0 rounded-full border-t-2 border-primary animate-spin" style={{ animationDuration: '3s' }}></div>
+              <div className="absolute inset-2 rounded-full border-r-2 border-indigo-500 animate-spin" style={{ animationDuration: '2s', animationDirection: 'reverse' }}></div>
+              <Bot className="w-10 h-10 text-primary animate-pulse" />
+              <Sparkles className="absolute -top-1 -right-1 w-6 h-6 text-yellow-500 animate-ping" />
+            </div>
+
+            <div className="space-y-3">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-indigo-500 bg-clip-text text-transparent animate-pulse">
+                AI가 저장소를 분석 중입니다
+              </h2>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                개발자님의 코드 리뷰 스타일, 커뮤니케이션 성향, 
+                숨겨진 강점을 추출하고 있습니다.
+              </p>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="w-full space-y-2">
+              <div className="h-2 w-full bg-secondary rounded-full overflow-hidden relative">
+                <div className="absolute left-0 top-0 h-full w-[80%] bg-gradient-to-r from-primary to-indigo-500 opacity-80 animate-pulse"></div>
+              </div>
+              <p className="text-xs text-muted-foreground font-mono transition-opacity animate-pulse">
+                Processing PR Data & Generating Insights...
+              </p>
+            </div>
+
+            {/* Warning Message */}
+            <div className="w-full mt-4 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-start gap-3 text-left">
+              <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-amber-600 dark:text-amber-500">페이지를 이탈하지 마세요!</p>
+                <p className="text-xs text-amber-600/80 dark:text-amber-500/80">
+                  심층 분석에 <b>최대 30초</b>가 소요될 수 있습니다. 진행 중 새로고침하거나 창을 닫으면 결과를 즉시 확인할 수 없습니다.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto p-6 md:p-12 space-y-8 animate-in fade-in duration-500">
