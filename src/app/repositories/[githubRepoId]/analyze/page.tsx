@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect, useMemo } from "react";
 import { useUserStore } from "@/store/useUserStore";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -25,8 +26,59 @@ function AnalyzePreviewContent() {
   const searchParams = useSearchParams();
   const { addToast } = useToast();
 
+  const [progress, setProgress] = useState(0);
+  const [messageIndex, setMessageIndex] = useState(0);
+
   const githubRepoId = params.githubRepoId as string;
   const fullName = searchParams.get("fullName") || "알 수 없는 저장소";
+
+  // 분석 시작 뮤테이션
+  const syncMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.post(`/collection/sync/${id}`);
+      return data;
+    },
+    onSuccess: () => {
+      addToast("분석이 성공적으로 시작되었습니다. 완료 시 대시보드에서 확인 가능합니다.", "success");
+      // 분석이 완료되었으므로 대시보드로 이동
+      router.push("/dashboard");
+    },
+    onError: (err: Error) => {
+      // 에러 메시지는 구체적이고 사용자가 이해하기 쉬운 언어로 (CLAUDE.md 규칙 적용)
+      const errMessage = getErrorMessage ? getErrorMessage(err) : "분석 요청 중 오류가 발생했습니다.";
+      addToast(errMessage, "error");
+    }
+  });
+
+  const loadingMessages = useMemo(() => [
+    "데이터 수집을 위한 보안 연결 초기화 중...",
+    "최근 Pull Request 및 커밋 데이터 수집 중...",
+    "코드 리뷰 및 코멘트 패턴 분석 중...",
+    "AI를 활용한 개발자 인사이팅 추출 중...",
+    "분석 리포트 결과 생성 및 최종 정리 중...",
+  ], []);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (syncMutation.isPending) {
+      const startTime = Date.now();
+      const duration = 25000; // 약 25초 동안 점진적 증가
+
+      timer = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const rawProgress = Math.min((elapsed / duration) * 100, 98);
+        
+        setProgress(prev => Math.max(prev, rawProgress));
+
+        const msgIdx = Math.min(
+          Math.floor((elapsed / duration) * loadingMessages.length), 
+          loadingMessages.length - 1
+        );
+        setMessageIndex(msgIdx);
+      }, 100);
+    }
+    return () => clearInterval(timer);
+  }, [syncMutation.isPending, loadingMessages.length]);
 
   // 보유 토큰 조회
   const { data: userTokens, isLoading: isTokensLoading } = useQuery<UserTokens>({
@@ -48,23 +100,6 @@ function AnalyzePreviewContent() {
     enabled: isAuthenticated && !!githubRepoId,
   });
 
-  // 분석 시작 뮤테이션
-  const syncMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { data } = await api.post(`/collection/sync/${id}`);
-      return data;
-    },
-    onSuccess: () => {
-      addToast("분석이 성공적으로 시작되었습니다. 완료 시 대시보드에서 확인 가능합니다.", "success");
-      // 분석이 완료되었으므로 대시보드로 이동
-      router.push("/dashboard");
-    },
-    onError: (err: Error) => {
-      // 에러 메시지는 구체적이고 사용자가 이해하기 쉬운 언어로 (CLAUDE.md 규칙 적용)
-      const errMessage = getErrorMessage ? getErrorMessage(err) : "분석 요청 중 오류가 발생했습니다.";
-      addToast(errMessage, "error");
-    }
-  });
 
   if (!isAuthenticated) return null;
 
@@ -105,10 +140,13 @@ function AnalyzePreviewContent() {
             {/* Progress Bar */}
             <div className="w-full space-y-2">
               <div className="h-2 w-full bg-secondary rounded-full overflow-hidden relative">
-                <div className="absolute left-0 top-0 h-full w-[80%] bg-gradient-to-r from-primary to-indigo-500 opacity-80 animate-pulse"></div>
+                <div 
+                  className="absolute left-0 top-0 h-full bg-gradient-to-r from-primary to-indigo-500 opacity-80 transition-all duration-500 ease-out"
+                  style={{ width: `${progress}%` }}
+                ></div>
               </div>
-              <p className="text-xs text-muted-foreground font-mono transition-opacity animate-pulse">
-                Processing PR Data & Generating Insights...
+              <p className="text-xs text-muted-foreground font-mono transition-opacity duration-500">
+                {loadingMessages[messageIndex]}
               </p>
             </div>
 
