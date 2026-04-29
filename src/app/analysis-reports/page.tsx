@@ -119,17 +119,9 @@ export default function HistoryPage() {
                 <span>{format(new Date(report.syncTime), "PPP p", { locale: ko })}</span>
               </div>
 
-              <div className="pt-4 border-t grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">최근 종합 점수</p>
-                  <p className="text-2xl font-bold text-primary">
-                    {report.metrics ? "참고" : "N/A"}
-                  </p>
-                </div>
-                <div className="flex items-end justify-end">
-                  <div className="px-3 py-1 bg-green-500/10 text-green-600 rounded-full text-xs font-medium border border-green-500/20">
-                    분석 완료
-                  </div>
+              <div className="pt-4 border-t flex justify-end">
+                <div className="px-3 py-1 bg-green-500/10 text-green-600 rounded-full text-xs font-medium border border-green-500/20">
+                  분석 완료
                 </div>
               </div>
             </Link>
