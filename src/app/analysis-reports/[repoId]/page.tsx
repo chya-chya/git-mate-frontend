@@ -42,7 +42,7 @@ export default function RepositoryHistoryPage() {
     <div className="p-6 max-w-5xl mx-auto space-y-8">
       <div className="flex items-center gap-4">
         <Link
-          href="/history"
+          href="/analysis-reports"
           className="p-2 hover:bg-accent rounded-full transition-colors"
         >
           <ArrowLeft size={20} />

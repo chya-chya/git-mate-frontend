@@ -102,7 +102,7 @@ export default function HistoryPage() {
             {history.map((report) => (
             <Link
               key={report.id}
-              href={`/history/${report.repositoryId}`}
+              href={`/analysis-reports/${report.repositoryId}`}
               className="group block p-6 rounded-2xl border bg-card hover:border-primary/50 transition-all hover:shadow-lg"
             >
               <div className="flex justify-between items-start mb-4">
