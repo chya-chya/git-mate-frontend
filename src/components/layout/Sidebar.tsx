@@ -6,11 +6,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const navItems = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Repositories", href: "/repositories", icon: GitBranch },
-  { name: "Analysis Reports", href: "/analysis-reports", icon: FileText },
-  { name: "Public", href: "/public", icon: Users },
-  { name: "Settings", href: "/settings", icon: Settings },
+  { name: "종합 대시보드", href: "/dashboard", icon: LayoutDashboard },
+  { name: "저장소 분석", href: "/repositories", icon: GitBranch },
+  { name: "분석 보고서", href: "/analysis-reports", icon: FileText },
+  { name: "공개 프로필", href: "/public", icon: Users },
+  { name: "설정", href: "/settings", icon: Settings },
 ];
 
 export default function Sidebar() {
@@ -24,7 +24,7 @@ export default function Sidebar() {
       <div className="h-full px-3 py-4 overflow-y-auto">
         <ul className="space-y-2 font-medium">
           {navItems.map((item) => (
-            <li key={item.name}>
+            <li key={item.href}>
               <Link
                 href={item.href}
                 className={`flex items-center p-2 rounded-lg hover:bg-accent transition-colors group ${

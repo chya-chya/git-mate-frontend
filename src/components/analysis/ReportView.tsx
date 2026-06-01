@@ -10,6 +10,7 @@ import {
   Award,
   GitPullRequest
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface MetricDetail {
   score: number;
@@ -171,22 +172,34 @@ export function ReportView({ report, showStatus = true }: ReportViewProps) {
             {metrics.map((m, idx) => {
               const isActive = activeIdx === idx;
               return (
-                <button
+                <motion.button
                   key={m.id}
                   onClick={() => setActiveIdx(idx)}
-                  className={`p-5 rounded-2xl border text-left transition-all duration-300 relative group overflow-hidden ${
+                  whileHover={{ y: -4, scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  className={`p-5 rounded-2xl border text-left transition-all duration-300 relative group overflow-hidden z-0 ${
                     isActive 
-                      ? "bg-gradient-to-br from-indigo-600 to-purple-600 text-white border-transparent shadow-lg shadow-indigo-600/20 translate-y-[-2px]" 
-                      : "bg-white hover:bg-slate-50/80 border-slate-100 hover:border-slate-300 hover:shadow-md"
+                      ? "text-white border-transparent shadow-lg shadow-indigo-600/20" 
+                      : "bg-white hover:bg-slate-50/80 border-slate-100 hover:border-indigo-200 hover:shadow-md"
                   }`}
                 >
-                  <div className="flex justify-between items-start mb-3">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded ${
+                  {/* 무빙 하이라이트 인디케이터 */}
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeIndicator"
+                      className="absolute inset-0 bg-gradient-to-br from-indigo-600 to-purple-600 -z-10"
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    />
+                  )}
+
+                  <div className="flex justify-between items-start mb-3 relative z-10">
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded transition-colors duration-300 ${
                       isActive ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
                     }`}>
                       {m.category}
                     </span>
-                    <span className={`text-xl font-bold flex items-center gap-1 ${
+                    <span className={`text-xl font-bold flex items-center gap-1 transition-colors duration-300 ${
                       isActive ? "text-white" : "text-indigo-600"
                     }`}>
                       <Award size={16} className="shrink-0" />
@@ -194,12 +207,14 @@ export function ReportView({ report, showStatus = true }: ReportViewProps) {
                     </span>
                   </div>
 
-                  <h3 className={`text-lg font-bold ${isActive ? "text-white" : "text-slate-800"}`}>
+                  <h3 className={`text-lg font-bold transition-colors duration-300 relative z-10 ${
+                    isActive ? "text-white" : "text-slate-800"
+                  }`}>
                     {m.name}
                   </h3>
 
                   {/* 미니 프로그레스 바 */}
-                  <div className="mt-4 h-1.5 w-full bg-black/10 rounded-full overflow-hidden">
+                  <div className="mt-4 h-1.5 w-full bg-black/10 rounded-full overflow-hidden relative z-10">
                     <div 
                       className={`h-full rounded-full transition-all duration-700 ${
                         isActive ? "bg-white" : "bg-gradient-to-r from-indigo-500 to-purple-500"
@@ -207,7 +222,7 @@ export function ReportView({ report, showStatus = true }: ReportViewProps) {
                       style={{ width: `${(m.score / 5) * 100}%` }}
                     />
                   </div>
-                </button>
+                </motion.button>
               );
             })}
           </div>
@@ -215,57 +230,66 @@ export function ReportView({ report, showStatus = true }: ReportViewProps) {
 
         {/* 오른쪽: 활성 지표의 상세 성장 피드백 카드 */}
         <div className="lg:col-span-5">
-          <div className="sticky top-6 p-6 rounded-3xl border bg-white shadow-md shadow-slate-100 border-slate-100 space-y-6 animate-in slide-in-from-right-4 duration-300">
-            <div className="flex justify-between items-start border-b pb-4">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 px-2 py-1 bg-indigo-50 rounded">
-                  {activeMetric.category}
-                </span>
-                <h3 className="text-2xl font-black text-slate-800 mt-2">{activeMetric.name}</h3>
-              </div>
-              <div className="text-right">
-                <div className="text-sm font-semibold text-muted-foreground">역량 점수</div>
-                <div className="text-3xl font-black text-indigo-600 flex items-baseline justify-end gap-1">
-                  {activeMetric.score.toFixed(1)}
-                  <span className="text-xs text-muted-foreground">/ 5.0</span>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeMetric.id}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.25, ease: "easeInOut" }}
+              className="sticky top-6 p-6 rounded-3xl border bg-white shadow-md shadow-slate-100 border-slate-100 space-y-6"
+            >
+              <div className="flex justify-between items-start border-b pb-4">
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 px-2 py-1 bg-indigo-50 rounded">
+                    {activeMetric.category}
+                  </span>
+                  <h3 className="text-2xl font-black text-slate-800 mt-2">{activeMetric.name}</h3>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-semibold text-muted-foreground">역량 점수</div>
+                  <div className="text-3xl font-black text-indigo-600 flex items-baseline justify-end gap-1">
+                    {activeMetric.score.toFixed(1)}
+                    <span className="text-xs text-muted-foreground">/ 5.0</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* 1. 구체적 근거 (Reason) */}
-            <div className="space-y-2">
-              <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-                <BrainCircuit size={16} className="text-purple-500 shrink-0" />
-                현상 진단 및 점수 산출 근거
-              </h4>
-              <div className="p-4 rounded-2xl bg-purple-50/40 border border-purple-100/50 text-slate-700 text-sm leading-relaxed font-medium">
-                {activeMetric.reason}
+              {/* 1. 구체적 근거 (Reason) */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                  <BrainCircuit size={16} className="text-purple-500 shrink-0" />
+                  현상 진단 및 점수 산출 근거
+                </h4>
+                <div className="p-4 rounded-2xl bg-purple-50/40 border border-purple-100/50 text-slate-700 text-sm leading-relaxed font-medium">
+                  {activeMetric.reason}
+                </div>
               </div>
-            </div>
 
-            {/* 2. 개선점 및 도약 전략 (Improvement) */}
-            <div className="space-y-2">
-              <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-                <Lightbulb size={16} className="text-amber-500 shrink-0" />
-                시니어 도약을 위한 성장 솔루션
-              </h4>
-              <div className="p-4 rounded-2xl bg-amber-50/40 border border-amber-100/50 text-slate-700 text-sm leading-relaxed font-medium">
-                {activeMetric.improvement}
+              {/* 2. 개선점 및 도약 전략 (Improvement) */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                  <Lightbulb size={16} className="text-amber-500 shrink-0" />
+                  시니어 도약을 위한 성장 솔루션
+                </h4>
+                <div className="p-4 rounded-2xl bg-amber-50/40 border border-amber-100/50 text-slate-700 text-sm leading-relaxed font-medium">
+                  {activeMetric.improvement}
+                </div>
               </div>
-            </div>
 
-            {/* 3. 모범 발화/행동 꿀팁 예시 (Example) */}
-            <div className="space-y-2">
-              <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-                <Sparkles size={16} className="text-indigo-500 shrink-0" />
-                동료 소통 실전 적용 템플릿
-              </h4>
-              <div className="p-4 rounded-2xl bg-indigo-50/40 border border-indigo-100/50 text-indigo-950 text-sm italic font-semibold leading-relaxed relative">
-                <span className="absolute top-2 left-2 text-indigo-200/50 text-3xl font-serif pointer-events-none">“</span>
-                <div className="pl-4 pr-2 whitespace-pre-wrap">{activeMetric.example}</div>
+              {/* 3. 모범 발화/행동 꿀팁 예시 (Example) */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                  <Sparkles size={16} className="text-indigo-500 shrink-0" />
+                  동료 소통 실전 적용 템플릿
+                </h4>
+                <div className="p-4 rounded-2xl bg-indigo-50/40 border border-indigo-100/50 text-indigo-950 text-sm italic font-semibold leading-relaxed relative">
+                  <span className="absolute top-2 left-2 text-indigo-200/50 text-3xl font-serif pointer-events-none">“</span>
+                  <div className="pl-4 pr-2 whitespace-pre-wrap">{activeMetric.example}</div>
+                </div>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </AnimatePresence>
         </div>
 
       </div>

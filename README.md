@@ -1,36 +1,41 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CODI-IT 프론트엔드
 
-## Getting Started
+## 패키지 설치
 
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 개발 환경에서 실행하기
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+로컬에서 개발 서버로 실행
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+npm run dev
+```
 
-## Learn More
+프론트엔드 사이트(<http://localhost:3000>)에서 API 주소 설정 페이지(<http://localhost:3000/setting>)로 접근해 API 주소를 변경해 테스트할 수 있습니다.
 
-To learn more about Next.js, take a look at the following resources:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 환경변수 설정하기
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`.env.example` 파일을 참고해서 `.env` 파일을 만들고 `NEXT_PUBLIC_API_BASE_URL`을 설정합니다.
 
-## Deploy on Vercel
+```
+NEXT_PUBLIC_API_BASE_URL=https://nb-project-codiit-be.vercel.app/api
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 프로덕션 실행
+
+Next.js 프로젝트를 빌드 후 실행할 수 있습니다.
+
+```
+npm run build
+npm run start
+```
+
+## API 연동 관련 안내
+
+API 리퀘스트를 하는 코드는 `src/lib/api/axiosInstance.ts` 파일의 `getAxiosInstance()` 함수를 통해 axios 인스턴스를 가져와서 리퀘스트를 보내고 있습니다.
+세부적인 엔드포인트 경로나 데이터 형식을 수정하고 싶다면 `getAxiosInstance()`를 검색해 해당하는 부분의 소스 코드를 수정해 주세요.
