@@ -182,7 +182,7 @@ export default function DashboardPage() {
                   최대 강점
                 </span>
                 <span className="text-sm font-semibold text-indigo-600">
-                  {strength.A}점 / 5.0
+                  {strength.A}점 / 100
                 </span>
               </div>
               <h3 className="text-xl font-bold text-slate-800 mb-2">
@@ -217,7 +217,7 @@ export default function DashboardPage() {
                   보완 필요 역량
                 </span>
                 <span className="text-sm font-semibold text-amber-600">
-                  {weakness.A}점 / 5.0
+                  {weakness.A}점 / 100
                 </span>
               </div>
               <h3 className="text-xl font-bold text-slate-800 mb-2">
