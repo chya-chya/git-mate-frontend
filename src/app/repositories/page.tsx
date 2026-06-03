@@ -117,7 +117,7 @@ export default function RepositoriesPage() {
                   exit={{ opacity: 0, scale: 0.96 }}
                   transition={{ duration: 0.25 }}
                   key={repo.id} 
-                  className={`group p-6 rounded-2xl border bg-card transition-all space-y-4 relative flex flex-col justify-between h-[235px] ${
+                  className={`group p-6 rounded-2xl border bg-card transition-all space-y-4 relative flex flex-col justify-between h-[250px] ${
                     isPinned 
                       ? "border-indigo-400 bg-indigo-50/10 shadow-md shadow-indigo-50/30" 
                       : "hover:border-slate-300 hover:shadow-md border-slate-200"
