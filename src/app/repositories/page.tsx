@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useUserStore } from "@/store/useUserStore";
-import { GitBranch, Star, Search, Filter, Play, Loader2, Pin, Clock } from "lucide-react";
+import { GitBranch, Search, Filter, Play, Loader2, Pin, Clock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/services/api";
 import { useRouter } from "next/navigation";
@@ -58,24 +58,6 @@ export default function RepositoriesPage() {
 
   if (!isAuthenticated) return null;
 
-  // 이름 분석 기반 가상 언어 스펙 반환 헬퍼
-  const getRepoLanguage = (fullName: string) => {
-    const name = fullName.toLowerCase();
-    if (name.includes("frontend") || name.includes("react") || name.includes("next") || name.includes("ui")) {
-      return { name: "TypeScript", color: "#3178c6" };
-    }
-    if (name.includes("backend") || name.includes("api") || name.includes("server") || name.includes("lambda")) {
-      return { name: "Python", color: "#3572A5" };
-    }
-    if (name.includes("go-") || name.includes("golang")) {
-      return { name: "Go", color: "#00ADD8" };
-    }
-    if (name.includes("rust") || name.includes("rs-")) {
-      return { name: "Rust", color: "#dea584" };
-    }
-    return { name: "JavaScript", color: "#f1e05a" };
-  };
-
   const filteredRepos = repos?.filter(repo => 
     repo.fullName.toLowerCase().includes(search.toLowerCase())
   );
@@ -127,7 +109,6 @@ export default function RepositoriesPage() {
           <AnimatePresence>
             {sortedRepos.map((repo) => {
               const isPinned = pinnedRepoIds.includes(repo.githubRepoId);
-              const lang = getRepoLanguage(repo.fullName);
               return (
                 <motion.div
                   layout
@@ -136,7 +117,7 @@ export default function RepositoriesPage() {
                   exit={{ opacity: 0, scale: 0.96 }}
                   transition={{ duration: 0.25 }}
                   key={repo.id} 
-                  className={`group p-6 rounded-2xl border bg-card transition-all space-y-4 relative flex flex-col justify-between h-[255px] ${
+                  className={`group p-6 rounded-2xl border bg-card transition-all space-y-4 relative flex flex-col justify-between h-[235px] ${
                     isPinned 
                       ? "border-indigo-400 bg-indigo-50/10 shadow-md shadow-indigo-50/30" 
                       : "hover:border-slate-300 hover:shadow-md border-slate-200"
@@ -162,10 +143,6 @@ export default function RepositoriesPage() {
                         >
                           <Pin size={15} className={isPinned ? "fill-amber-500 text-amber-500" : ""} />
                         </button>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground bg-slate-50 border rounded-full px-2 py-1">
-                          <Star size={12} className="text-yellow-500 fill-yellow-500" />
-                          <span className="font-medium">0</span>
-                        </div>
                       </div>
                     </div>
                     
@@ -186,16 +163,10 @@ export default function RepositoriesPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between text-xs text-muted-foreground pt-1.5 border-t border-slate-100">
-                      <span className="flex items-center gap-1 px-2 py-0.5 bg-slate-100 rounded-full text-[10px] font-semibold text-slate-600">
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: lang.color }} />
-                        {lang.name}
-                      </span>
-                      <span className="flex items-center gap-1 text-[11px]">
-                        <Clock size={11} />
-                        {repo.lastSyncTime ? new Date(repo.lastSyncTime).toLocaleDateString() : "분석 이력 없음"}
-                      </span>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground pt-2 border-t border-slate-100">
+                      <Clock size={12} className="text-slate-400" />
+                      <span>마지막 분석: {repo.lastSyncTime ? new Date(repo.lastSyncTime).toLocaleDateString() : "분석 이력 없음"}</span>
                     </div>
 
                     <motion.button 
