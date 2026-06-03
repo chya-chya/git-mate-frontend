@@ -1,14 +1,106 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useUserStore } from "@/store/useUserStore";
-import { ArrowRight, GitBranch, Sparkles, Code2, GitPullRequest, LineChart, CheckCircle2, BrainCircuit, MessageSquare } from "lucide-react";
+import { 
+  ArrowRight, 
+  GitBranch, 
+  Sparkles, 
+  Code2, 
+  GitPullRequest, 
+  LineChart, 
+  CheckCircle2, 
+  BrainCircuit, 
+  TrendingUp,
+  Lightbulb,
+  Award
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+
+interface DemoMetric {
+  label: string;
+  score: number;
+  description: string;
+  summary: string;
+  solution: string;
+  template: string;
+}
+
+const DEMO_METRICS: DemoMetric[] = [
+  {
+    label: "상호 존중",
+    score: 4.5,
+    description: "리뷰 및 의견 제시 시 상대에 대한 지지와 긍정적 지지도를 유지합니다.",
+    summary: "이 개발자는 코드 리뷰와 PR 토론 시 동료의 기여를 먼저 인정하고 존중의 언어를 적극적으로 활용합니다. 🤝",
+    solution: "성급하게 수정 요구를 하기보다, '이러한 대안도 고려해 볼 수 있을까요?'와 같은 부드러운 제안 어법(I-message)을 유지하는 것이 좋습니다.",
+    template: "멋진 코드 감사드립니다! 말씀해주신 아키텍처에 깊이 공감합니다. 이 메소드의 복잡도만 조금 덜어내면 훨씬 가독성이 좋아질 것 같습니다."
+  },
+  {
+    label: "갈등 관리",
+    score: 3.5,
+    description: "의견 대립 상황에서 타협점과 합리적인 해결 방안을 도출합니다.",
+    summary: "기술 스택 및 구현 논의 중 발생하는 견해차를 감정적 대립으로 키우지 않고 논리적 타협점을 제안하는 조율 능력이 돋보입니다. ⚖️",
+    solution: "의견이 평행선을 달릴 때는 비동기식 텍스트 토론에 매몰되기보다 5분간의 짧은 구글 미트 등 다이렉트 소통을 이끌어 빠른 접점을 조립해 보세요.",
+    template: "두 방안 모두 분명한 트레이드오프가 있네요. 이번 마일스톤은 런칭 속도가 우선이니 A안으로 먼저 진행하고, 부하 테스트 결과를 본 뒤 B안 리팩토링을 기획해보면 어떨까요?"
+  },
+  {
+    label: "문제 정의",
+    score: 4.5,
+    description: "해결하고자 하는 문제의 핵심 원인과 목적을 명확히 명시합니다.",
+    summary: "PR 개설 시 해당 티켓의 목표와 백그라운드 맥락을 정확하고 풍부하게 기재하여 리뷰어의 인지 복잡도를 크게 덜어줍니다. 🎯",
+    solution: "비즈니스 요구사항 외에도 기술적인 측면에서 이 변경사항이 미치는 의존성 리스크(Side-effect)도 함께 목록화하면 리스크 방어가 완벽해집니다.",
+    template: "이번 PR은 사용자 다량 트래픽 유입 시 장바구니 DB 락 현상을 방지하기 위해 비동기 큐 처리 로직을 가미한 변경입니다. 테스트 시나리오는 하단에 작성해 두었습니다."
+  },
+  {
+    label: "맥락 공유",
+    score: 4.0,
+    description: "의사결정 이유와 코드가 변경된 이면의 히스토리를 친절히 밝힙니다.",
+    summary: "복잡해 보이는 리팩토링이나 레거시 코드를 건드렸을 때, 주석이나 디스크립션을 통해 동료들이 히스토리를 추적하기 용이하게 지원합니다. 📖",
+    solution: "코드의 한계점을 알고 있다면 숨기지 말고 'TODO: 향후 마이크로서비스 분리 시 수정 필요' 등의 노트를 셀프 코멘트로 명시해 팀 지식을 자산화해 보세요.",
+    template: "이 부분은 원래 공통 유틸이었으나, 회원가입 모듈에서만 특이 조건이 추가되어 독립된 헬퍼 함수로 분리하였습니다. 이전 히스토리는 #124 이슈를 참고해 주세요."
+  },
+  {
+    label: "문서화",
+    score: 3.5,
+    description: "프로젝트 진행 과정상 필요한 가이드라인과 변경 사양을 친절히 기재합니다.",
+    summary: "신규 환경변수 추가나 API 스펙 변경 시 관련 문서를 성실하게 업데이트하여 온보딩 장벽을 경감하는 데 기여합니다. 📝",
+    solution: "단순 텍스트 설명 외에도 API의 Request/Response 스펙이나 Swagger 명세를 복사하기 좋은 형식으로 문서에 직접 얹어주면 동료의 작업 효율이 대폭 향상됩니다.",
+    template: "### 🚀 신규 API 환경설정\n* `.env.local` 에 `API_GATEWAY_URL`을 반드시 로컬 주소로 설정해야 작동합니다. 추가된 API 스펙은 노션 페이지[링크]를 참고하세요."
+  },
+  {
+    label: "지식 공유",
+    score: 3.0,
+    description: "리뷰 및 스터디를 통해 팀원들에게 새로운 기술 정보와 인사이트를 나눕니다.",
+    summary: "좋은 레퍼런스나 최신 동향 기사를 발견하면 슬랙 채널이나 위키에 간헐적으로 포스팅하여 팀 전반의 학습 동력을 서포트합니다. 💡",
+    solution: "리뷰 과정에서 '이 글을 참고하시면 유용합니다'와 같은 우수 링크 공유를 일상화하고, 매주 15분 정도의 짧은 기술 디브리핑을 시도하며 팀 내 영향력을 키워 보세요.",
+    template: "이번에 도입한 Redux Toolkit 2.0의 신규 미들웨어 패턴입니다. 공식 문서 중 [이 아티클]이 가장 정리가 잘 되어 있어 공유해 드립니다. 함께 읽어보면 좋겠습니다!"
+  },
+  {
+    label: "기술 영향력",
+    score: 4.0,
+    description: "새로운 방법론을 전파하거나 팀의 기술 표준 수립에 힘을 보탭니다.",
+    summary: "코드 가독성 규칙이나 빌드 성능 최적화 가이드 등 전반적인 엔지니어링 퀄리티 상승에 기여하는 템플릿과 린트 룰 제안을 솔선수범합니다. 🛠️",
+    solution: "제안한 아이디어가 실제로 얼마나 개선되었는지(예: 번들 사이즈 15% 절감 등) 데이터를 바탕으로 포스트를 남겨 기술 신뢰 기반을 탄탄히 다지세요.",
+    template: "기존에 매번 직접 구현하던 에러 핸들러 보일러플레이트를 커스텀 미들웨어로 축약했습니다. 이를 통해 전체 소스 코드 100줄을 감축하고 에러 누수를 전면 차단했습니다."
+  },
+  {
+    label: "코드 안정성",
+    score: 4.0,
+    description: "버그 예방, 엣지 케이스 고려 및 견고한 설계를 보증합니다.",
+    summary: "예외 처리 및 널 포인터 방어 코드를 꼼꼼히 작성하여 배포 시 장애 발생 확률을 선제적으로 통제합니다. 🛡️",
+    solution: "유닛 테스트나 통합 테스트 커버리지 리포트를 PR 스펙에 캡처해 추가함으로써 배포 안정성에 대한 정량적인 자신감을 동료들에게 불어넣어 보세요.",
+    template: "사용자가 입력한 값이 null이거나 빈 문자열일 때 발생할 수 있는 런타임 NullPointerException 에러를 삼항 연산자와 디폴트 팩토리로 차단하고 방어 로직을 테스트했습니다."
+  }
+];
 
 export default function HomePage() {
   const { isAuthenticated } = useUserStore();
   const router = useRouter();
+  const [selectedIdx, setSelectedIdx] = useState(0);
+
+  const currentMetric = DEMO_METRICS[selectedIdx];
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -92,10 +184,10 @@ export default function HomePage() {
         <div className="py-24 border-t border-muted-foreground/10 space-y-12">
           <div className="text-center space-y-4">
             <h2 className="text-3xl font-bold tracking-tight">실제 분석 리포트 예시</h2>
-            <p className="text-lg text-muted-foreground">Git-Mate가 분석한 상세 리포트를 미리 확인해 보세요.</p>
+            <p className="text-lg text-muted-foreground">지표를 클릭하여 Git-Mate가 제공하는 성장 코칭을 직접 체험해 보세요.</p>
           </div>
 
-          <div className="text-left space-y-8 bg-background border shadow-2xl rounded-2xl p-6 md:p-10 max-w-5xl mx-auto transform hover:scale-[1.01] transition-transform duration-500">
+          <div className="text-left space-y-8 bg-background border shadow-2xl rounded-3xl p-6 md:p-10 max-w-5xl mx-auto">
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-3">
                 <h3 className="text-2xl font-bold">분석 리포트</h3>
@@ -103,63 +195,131 @@ export default function HomePage() {
                   <CheckCircle2 className="w-3 h-3" /> 완료
                 </span>
               </div>
-              <p className="text-sm text-muted-foreground">2026. 4. 13. 오후 3:26:32 분석</p>
+              <p className="text-sm text-muted-foreground">체험용 실시간 데모 리포트입니다</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* 좌측: 8대 역량 클릭 그리드 (2열 구조) */}
               <div className="lg:col-span-2 space-y-6">
-                {/* AI Summary Card */}
-                <div className="p-6 rounded-xl border bg-card space-y-4">
-                  <h4 className="font-bold flex items-center gap-2 text-lg">
-                    <BrainCircuit className="w-6 h-6 text-purple-500" /> AI 분석 요약
-                  </h4>
-                  <p className="text-sm leading-relaxed text-foreground/90">
-                    이 개발자는 코드 리뷰와 PR 작성에서 높은 상호 존중과 수용성을 보여주며, 대부분의 PR에서 논리적 문제 정의와 주도적인 맥락 공유가 이루어졌습니다. 문서화에서 성실히 작성하려는 모습은 보이나 일부 자세한 설명 부족한 부분이 있으며, 기술적 영향력에 있어 어느 정도의 영향력을 행사하고 있으나 표준화된 기술 영향력은 부족합니다. 전반적으로 코드의 안정성은 확보되었지만, 깊이 있는 논의가 더 많았다면 더 좋았을 것입니다.
-                  </p>
-                </div>
-
-                {/* Progress Bars Card */}
-                <div className="p-6 rounded-xl border bg-card space-y-8">
-                  <h4 className="font-bold text-lg">역량 지표 상세 (1.0 ~ 5.0)</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-                    {[
-                      { label: "상호 존중", score: 4.5 },
-                      { label: "갈등 관리", score: 3.5 },
-                      { label: "문제 정의", score: 4.5 },
-                      { label: "맥락 공유", score: 4.0 },
-                      { label: "문서화", score: 3.5 },
-                      { label: "지식 공유", score: 3.0 },
-                      { label: "기술 영향력", score: 4.0 },
-                      { label: "코드 안정성", score: 4.0 },
-                    ].map((item, i) => (
-                      <div key={i} className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="font-medium text-foreground/80">{item.label}</span>
-                          <span className="font-bold text-indigo-500">{item.score.toFixed(1)}</span>
-                        </div>
-                        <div className="h-2 w-full bg-accent rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-indigo-500 rounded-full" 
-                            style={{ width: `${(item.score / 5) * 100}%` }}
-                          />
-                        </div>
-                      </div>
-                    ))}
+                <div className="p-6 rounded-2xl border bg-card shadow-sm space-y-6">
+                  <div className="flex items-center justify-between border-b pb-4">
+                    <h4 className="font-bold text-lg text-slate-800 flex items-center gap-2">
+                      <TrendingUp className="text-indigo-500" size={20} />
+                      역량 지표 상세 (클릭 가능)
+                    </h4>
+                    <span className="text-xs text-muted-foreground font-medium hidden sm:inline">카드를 선택하면 AI 코칭이 변경됩니다</span>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {DEMO_METRICS.map((item, idx) => {
+                      const isSelected = selectedIdx === idx;
+                      return (
+                        <motion.button
+                          key={idx}
+                          onClick={() => setSelectedIdx(idx)}
+                          whileHover={{ y: -2 }}
+                          whileTap={{ scale: 0.98 }}
+                          className={`p-4 rounded-xl border text-left transition-all relative flex flex-col justify-between h-[105px] overflow-hidden ${
+                            isSelected 
+                              ? "bg-indigo-50/50 border-indigo-200 shadow-md shadow-indigo-100/50" 
+                              : "bg-white hover:border-slate-300 hover:shadow-sm border-slate-200 cursor-pointer"
+                          }`}
+                        >
+                          {/* active 백그라운드 라인 인디케이터 */}
+                          {isSelected && (
+                            <motion.div
+                              layoutId="activeDemoIndicator"
+                              className="absolute inset-y-0 left-0 w-1 bg-indigo-600 z-0"
+                              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                            />
+                          )}
+                          <div className="relative z-10 w-full">
+                            <div className="flex justify-between items-center w-full mb-1">
+                              <span className={`font-bold text-sm ${isSelected ? "text-indigo-700" : "text-slate-700"}`}>
+                                {item.label}
+                              </span>
+                              <span className={`font-extrabold text-sm ${isSelected ? "text-indigo-600" : "text-slate-500"}`}>
+                                {item.score.toFixed(1)} / 5.0
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 leading-normal line-clamp-2 pr-1">
+                              {item.description}
+                            </p>
+                          </div>
+                          <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden relative z-10">
+                            <motion.div 
+                              className={`h-full rounded-full ${isSelected ? "bg-indigo-600" : "bg-slate-400"}`}
+                              initial={{ width: 0 }}
+                              animate={{ width: `${(item.score / 5) * 100}%` }}
+                              transition={{ duration: 0.4, ease: "easeOut" }}
+                            />
+                          </div>
+                        </motion.button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
 
+              {/* 우측: AI 요약 및 상세 솔루션 */}
               <div className="lg:col-span-1">
-                {/* Target Repo Card */}
-                <div className="p-6 rounded-xl border bg-card space-y-4 h-fit">
-                  <h4 className="font-bold flex items-center gap-2">
-                    <MessageSquare className="w-5 h-5 text-blue-500" /> 분석 대상
-                  </h4>
-                  <div className="flex items-center justify-between text-sm mt-4 pt-4 border-t">
-                    <span className="text-muted-foreground whitespace-nowrap">저장소</span>
-                    <span className="font-semibold text-foreground truncate pl-4" title="nb02-CODIIT-team2/CODIIT-backend">nb02-CODIIT-team2/CODIIT-backend</span>
-                  </div>
-                </div>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={selectedIdx}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="p-6 rounded-2xl border bg-card shadow-sm space-y-6 flex flex-col justify-between h-full min-h-[460px] relative overflow-hidden"
+                  >
+                    <div className="space-y-5">
+                      {/* 파트 1: AI 진단 분석 */}
+                      <div className="space-y-2">
+                        <h4 className="font-bold flex items-center gap-2 text-sm text-slate-800">
+                          <BrainCircuit className="w-4 h-4 text-indigo-500" />
+                          AI 역량 진단 ({currentMetric.label})
+                        </h4>
+                        <p className="text-xs text-slate-600 leading-relaxed font-medium bg-slate-50 p-3 rounded-xl border border-slate-100">
+                          {currentMetric.summary}
+                        </p>
+                      </div>
+
+                      {/* 파트 2: 시니어 솔루션 */}
+                      <div className="space-y-2">
+                        <h4 className="font-bold flex items-center gap-2 text-sm text-slate-800">
+                          <Lightbulb className="w-4 h-4 text-yellow-500" />
+                          성장 가이드 솔루션
+                        </h4>
+                        <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                          {currentMetric.solution}
+                        </p>
+                      </div>
+
+                      {/* 파트 3: 소통 모범 템플릿 */}
+                      <div className="space-y-2">
+                        <h4 className="font-bold flex items-center gap-2 text-sm text-emerald-600">
+                          <Award className="w-4 h-4 text-emerald-500" />
+                          추천 피드백 템플릿
+                        </h4>
+                        <div className="bg-emerald-50/20 border border-emerald-100/50 rounded-xl p-3">
+                          <p className="text-xs text-emerald-800 leading-relaxed italic font-semibold">
+                            &quot;{currentMetric.template}&quot;
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Link
+                      href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/auth/github`}
+                      className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-indigo-600 font-semibold hover:text-indigo-800 group"
+                    >
+                      <span className="group-hover:translate-x-1 transition-transform">
+                        내 깃허브 연동하고 맞춤 리포트 받기
+                      </span>
+                      <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                    </Link>
+                  </motion.div>
+                </AnimatePresence>
               </div>
             </div>
           </div>
