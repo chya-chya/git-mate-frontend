@@ -81,10 +81,10 @@ export default function AnalysisDetailPage() {
     return list[0];
   };
 
-  // 명함 고화질 PNG 다운로드
+  // 분석카드 고화질 PNG 다운로드
   const downloadCard = async () => {
     if (cardRef.current === null) return;
-    addToast("명함 이미지를 생성하는 중입니다...", "success");
+    addToast("분석카드 이미지를 생성하는 중입니다...", "success");
     try {
       // 폰트 및 스타일 렌더링 동기화를 위해 약간의 딜레이 보장
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -99,10 +99,10 @@ export default function AnalysisDetailPage() {
         }
       });
       const link = document.createElement("a");
-      link.download = `git-mate-card-${user?.username || "developer"}.png`;
+      link.download = `git-mate-analysis-${user?.username || "developer"}.png`;
       link.href = dataUrl;
       link.click();
-      addToast("명함 이미지가 성공적으로 저장되었습니다!", "success");
+      addToast("분석카드 이미지가 성공적으로 저장되었습니다!", "success");
     } catch (err) {
       console.error("Oops, something went wrong!", err);
       addToast("이미지 저장 중 오류가 발생했습니다.", "error");
@@ -209,7 +209,7 @@ export default function AnalysisDetailPage() {
             className="flex items-center gap-2 px-4 py-2 rounded-xl border border-indigo-200 bg-indigo-50/40 text-indigo-700 hover:bg-indigo-50 transition-all text-sm font-semibold shadow-sm cursor-pointer"
           >
             <CreditCard size={17} />
-            소통 명함 만들기
+            분석카드 만들기
           </button>
 
           <button
@@ -297,8 +297,8 @@ export default function AnalysisDetailPage() {
               </button>
 
               <div className="text-center space-y-1">
-                <h3 className="text-white font-bold text-lg">나만의 소통 명함</h3>
-                <p className="text-xs text-slate-400">개발 성과와 협업 역량을 증명하는 오리지널 명함 카드</p>
+                <h3 className="text-white font-bold text-lg">나만의 분석카드</h3>
+                <p className="text-xs text-slate-400">개발 성과와 협업 역량을 증명하는 오리지널 분석카드</p>
               </div>
 
               {/* 캡처 대상 명함 바디 */}
@@ -390,7 +390,7 @@ export default function AnalysisDetailPage() {
                   onClick={downloadCard}
                   className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-md shadow-indigo-600/20 transition-all cursor-pointer animate-none"
                 >
-                  <Download size={13} /> 명함 저장 (PNG)
+                  <Download size={13} /> 분석카드 저장 (PNG)
                 </button>
               </div>
             </motion.div>
