@@ -6,10 +6,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const navItems = [
-  { name: "종합 대시보드", href: "/dashboard", icon: LayoutDashboard },
-  { name: "저장소 분석", href: "/repositories", icon: GitBranch },
-  { name: "분석 보고서", href: "/analysis-reports", icon: FileText },
-  { name: "공개 프로필", href: "/public", icon: Users },
+  { name: "대시보드", href: "/dashboard", icon: LayoutDashboard },
+  { name: "깃 저장소 분석", href: "/repositories", icon: GitBranch },
+  { name: "분석 결과", href: "/analysis-reports", icon: FileText },
+  { name: "공개된 분석", href: "/public", icon: Users },
   { name: "설정", href: "/settings", icon: Settings },
 ];
 
