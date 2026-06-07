@@ -45,8 +45,8 @@ interface ReportViewProps {
 function renderTextWithLinks(text: string) {
   if (!text) return null;
 
-  // Split text by markdown link pattern `[text](url)` or plain URL pattern `http(s)://...`
-  const regex = /(\[[^\]]+\]\(https?:\/\/[^\s)]+\)|https?:\/\/[^\s()]+)/g;
+  // Split text by markdown link, PR parenthesis link, or plain URL
+  const regex = /(\[[^\]]+\]\(https?:\/\/[^\s)]+\)|PR\s+#\d+\s*\(https?:\/\/[^\s)]+\)|https?:\/\/[^\s()]+)/g;
   const parts = text.split(regex);
 
   return parts.map((part, index) => {
@@ -67,7 +67,24 @@ function renderTextWithLinks(text: string) {
       );
     }
 
-    // 2. Check plain URL pattern
+    // 2. Check PR parenthesis link pattern: PR #249(https://...)
+    const prMatch = part.match(/^(PR\s+#\d+)\s*\((https?:\/\/[^\s)]+)\)$/);
+    if (prMatch) {
+      const [, prLabel, url] = prMatch;
+      return (
+        <a
+          key={index}
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-indigo-600 hover:underline font-semibold"
+        >
+          {prLabel}
+        </a>
+      );
+    }
+
+    // 3. Check plain URL pattern
     const urlMatch = part.match(/^(https?:\/\/[^\s()]+)$/);
     if (urlMatch) {
       const url = urlMatch[1];
@@ -84,7 +101,7 @@ function renderTextWithLinks(text: string) {
       );
     }
 
-    // 3. Regular text
+    // 4. Regular text
     return part;
   });
 }
