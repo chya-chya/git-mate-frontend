@@ -133,7 +133,7 @@ export function ReportView({ report, showStatus = true }: ReportViewProps) {
               </span>
             </div>
             <p className="text-muted-foreground">
-              {new Date(report.syncTime).toLocaleString("ko-KR")} 기준 성장 보고서
+              {new Date(report.syncTime).toLocaleString("ko-KR")}
             </p>
           </div>
         </header>
