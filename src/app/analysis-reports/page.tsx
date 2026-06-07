@@ -7,9 +7,18 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 
+interface Report {
+  id: string;
+  repositoryId: string;
+  syncTime: string;
+  repository: {
+    fullName: string;
+  };
+}
+
 export default function HistoryPage() {
-  const [history, setHistory] = useState<any[]>([]);
-  const [sharedReports, setSharedReports] = useState<any[]>([]);
+  const [history, setHistory] = useState<Report[]>([]);
+  const [sharedReports, setSharedReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"history" | "shared">("history");
 

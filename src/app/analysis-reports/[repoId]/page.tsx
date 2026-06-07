@@ -8,10 +8,21 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 
+interface Report {
+  id: string;
+  syncTime: string;
+  repository?: {
+    fullName: string;
+  };
+  metrics?: {
+    summary?: string;
+  };
+}
+
 export default function RepositoryHistoryPage() {
   const params = useParams();
   const repoId = Number(params.repoId);
-  const [reports, setReports] = useState<any[]>([]);
+  const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -57,7 +68,7 @@ export default function RepositoryHistoryPage() {
       </div>
 
       <div className="relative space-y-4 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent">
-        {reports.map((report, index) => (
+        {reports.map((report) => (
           <div key={report.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
             {/* Dot */}
             <div className="flex items-center justify-center w-10 h-10 rounded-full border bg-background shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
