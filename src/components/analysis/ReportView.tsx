@@ -42,6 +42,53 @@ interface ReportViewProps {
   showStatus?: boolean;
 }
 
+function renderTextWithLinks(text: string) {
+  if (!text) return null;
+
+  // Split text by markdown link pattern `[text](url)` or plain URL pattern `http(s)://...`
+  const regex = /(\[[^\]]+\]\(https?:\/\/[^\s)]+\)|https?:\/\/[^\s()]+)/g;
+  const parts = text.split(regex);
+
+  return parts.map((part, index) => {
+    // 1. Check markdown link pattern: [Text](Url)
+    const mdMatch = part.match(/^\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/);
+    if (mdMatch) {
+      const [, linkText, url] = mdMatch;
+      return (
+        <a
+          key={index}
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-indigo-600 hover:underline font-semibold"
+        >
+          {linkText}
+        </a>
+      );
+    }
+
+    // 2. Check plain URL pattern
+    const urlMatch = part.match(/^(https?:\/\/[^\s()]+)$/);
+    if (urlMatch) {
+      const url = urlMatch[1];
+      return (
+        <a
+          key={index}
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-indigo-600 hover:underline font-semibold break-all"
+        >
+          {url}
+        </a>
+      );
+    }
+
+    // 3. Regular text
+    return part;
+  });
+}
+
 export function ReportView({ report, showStatus = true }: ReportViewProps) {
   const metrics = [
     { 
@@ -150,7 +197,7 @@ export function ReportView({ report, showStatus = true }: ReportViewProps) {
             AI 시니어 HR 기술 종합 요약평
           </h2>
           <p className="text-lg leading-relaxed text-slate-700 font-medium whitespace-pre-wrap">
-            {report.metrics.summary || "종합 분석 요약이 작성되고 있습니다."}
+            {report.metrics.summary ? renderTextWithLinks(report.metrics.summary) : "종합 분석 요약이 작성되고 있습니다."}
           </p>
         </div>
       </section>
@@ -261,8 +308,8 @@ export function ReportView({ report, showStatus = true }: ReportViewProps) {
                   <BrainCircuit size={16} className="text-purple-500 shrink-0" />
                   현상 진단 및 점수 산출 근거
                 </h4>
-                <div className="p-4 rounded-2xl bg-purple-50/40 border border-purple-100/50 text-slate-700 text-sm leading-relaxed font-medium">
-                  {activeMetric.reason}
+                <div className="p-4 rounded-2xl bg-purple-50/40 border border-purple-100/50 text-slate-700 text-sm leading-relaxed font-medium whitespace-pre-wrap">
+                  {renderTextWithLinks(activeMetric.reason)}
                 </div>
               </div>
 
@@ -272,8 +319,8 @@ export function ReportView({ report, showStatus = true }: ReportViewProps) {
                   <Lightbulb size={16} className="text-amber-500 shrink-0" />
                   시니어 도약을 위한 성장 솔루션
                 </h4>
-                <div className="p-4 rounded-2xl bg-amber-50/40 border border-amber-100/50 text-slate-700 text-sm leading-relaxed font-medium">
-                  {activeMetric.improvement}
+                <div className="p-4 rounded-2xl bg-amber-50/40 border border-amber-100/50 text-slate-700 text-sm leading-relaxed font-medium whitespace-pre-wrap">
+                  {renderTextWithLinks(activeMetric.improvement)}
                 </div>
               </div>
 
@@ -285,7 +332,7 @@ export function ReportView({ report, showStatus = true }: ReportViewProps) {
                 </h4>
                 <div className="p-4 rounded-2xl bg-indigo-50/40 border border-indigo-100/50 text-indigo-950 text-sm italic font-semibold leading-relaxed relative">
                   <span className="absolute top-2 left-2 text-indigo-200/50 text-3xl font-serif pointer-events-none">“</span>
-                  <div className="pl-4 pr-2 whitespace-pre-wrap">{activeMetric.example}</div>
+                  <div className="pl-4 pr-2 whitespace-pre-wrap">{renderTextWithLinks(activeMetric.example)}</div>
                 </div>
               </div>
             </motion.div>
