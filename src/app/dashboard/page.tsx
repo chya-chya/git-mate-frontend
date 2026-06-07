@@ -194,7 +194,7 @@ export default function DashboardPage() {
             </div>
             {latestReport && (
               <Link
-                href={`/analysis-reports/${latestReport.id}`}
+                href={`/analysis/${latestReport.id}`}
                 className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-indigo-600 font-semibold hover:text-indigo-800 relative z-10"
               >
                 <span className="group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
@@ -229,7 +229,7 @@ export default function DashboardPage() {
             </div>
             {latestReport && (
               <Link
-                href={`/analysis-reports/${latestReport.id}`}
+                href={`/analysis/${latestReport.id}`}
                 className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-amber-600 font-semibold hover:text-amber-800 relative z-10"
               >
                 <span className="group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
