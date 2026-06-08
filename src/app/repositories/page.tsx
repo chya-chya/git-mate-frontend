@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useUserStore } from "@/store/useUserStore";
-import { GitBranch, Search, Filter, Play, Loader2, Pin, Clock } from "lucide-react";
+import { GitBranch, Search, Play, Loader2, Pin, Clock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/services/api";
 import { useRouter } from "next/navigation";
@@ -20,6 +20,8 @@ export default function RepositoriesPage() {
   const { isAuthenticated } = useUserStore();
   const router = useRouter();
   const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<"pinned" | "name" | "lastSync">("pinned");
+  const [filterBy, setFilterBy] = useState<"all" | "analyzed" | "notAnalyzed">("all");
   const [pinnedRepoIds, setPinnedRepoIds] = useState<string[]>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("pinned_repos");
@@ -58,17 +60,34 @@ export default function RepositoriesPage() {
 
   if (!isAuthenticated) return null;
 
-  const filteredRepos = repos?.filter(repo => 
-    repo.fullName.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredRepos = repos?.filter(repo => {
+    const matchesSearch = repo.fullName.toLowerCase().includes(search.toLowerCase());
+    const matchesFilter = 
+      filterBy === "all" ? true :
+      filterBy === "analyzed" ? repo.lastSyncTime !== null :
+      filterBy === "notAnalyzed" ? repo.lastSyncTime === null : true;
+    return matchesSearch && matchesFilter;
+  });
 
-  // 즐겨찾기(Pin) 기준 정렬 로직
+  // 정렬 로직 (즐겨찾기 핀 우선 적용 후 선택한 정렬 기준 적용)
   const sortedRepos = filteredRepos ? [...filteredRepos].sort((a, b) => {
     const aPinned = pinnedRepoIds.includes(a.githubRepoId);
     const bPinned = pinnedRepoIds.includes(b.githubRepoId);
+    
     if (aPinned && !bPinned) return -1;
     if (!aPinned && bPinned) return 1;
-    return 0;
+    
+    if (sortBy === "name") {
+      return a.fullName.localeCompare(b.fullName);
+    }
+    
+    if (sortBy === "lastSync") {
+      const aTime = a.lastSyncTime ? new Date(a.lastSyncTime).getTime() : 0;
+      const bTime = b.lastSyncTime ? new Date(b.lastSyncTime).getTime() : 0;
+      return bTime - aTime;
+    }
+    
+    return a.fullName.localeCompare(b.fullName);
   }) : [];
 
   return (
@@ -78,7 +97,7 @@ export default function RepositoriesPage() {
           <h1 className="text-3xl font-bold tracking-tight">내 저장소</h1>
           <p className="text-muted-foreground">분석할 GitHub 저장소를 선택하세요.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
             <input 
@@ -86,12 +105,29 @@ export default function RepositoriesPage() {
               placeholder="저장소 검색..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 pr-4 py-2 border rounded-lg bg-background w-full md:w-64 focus:ring-2 focus:ring-primary outline-none text-sm"
+              className="pl-10 pr-4 py-2 border rounded-lg bg-background w-full md:w-64 focus:ring-2 focus:ring-primary outline-none text-sm border-slate-200"
             />
           </div>
-          <button className="p-2 border rounded-lg hover:bg-accent">
-            <Filter size={18} />
-          </button>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as "pinned" | "name" | "lastSync")}
+              className="px-3 py-2 border rounded-lg bg-background text-sm outline-none focus:ring-2 focus:ring-primary cursor-pointer border-slate-200 text-muted-foreground hover:bg-accent hover:text-foreground transition-all"
+            >
+              <option value="pinned">즐겨찾기 우선</option>
+              <option value="name">이름순 (A-Z)</option>
+              <option value="lastSync">마지막 분석 최신순</option>
+            </select>
+            <select
+              value={filterBy}
+              onChange={(e) => setFilterBy(e.target.value as "all" | "analyzed" | "notAnalyzed")}
+              className="px-3 py-2 border rounded-lg bg-background text-sm outline-none focus:ring-2 focus:ring-primary cursor-pointer border-slate-200 text-muted-foreground hover:bg-accent hover:text-foreground transition-all"
+            >
+              <option value="all">모든 저장소</option>
+              <option value="analyzed">분석 완료</option>
+              <option value="notAnalyzed">미분석 저장소</option>
+            </select>
+          </div>
         </div>
       </header>
 
