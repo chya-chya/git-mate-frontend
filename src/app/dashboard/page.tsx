@@ -314,7 +314,7 @@ export default function DashboardPage() {
                 reports.slice(0, 5).map((report: Report) => (
                   <Link
                     key={report.id}
-                    href={`/analysis-reports/${report.id}`}
+                    href={`/analysis/${report.id}`}
                     className="block group"
                   >
                     <motion.div
