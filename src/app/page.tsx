@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useUserStore } from "@/store/useUserStore";
+import { GITHUB_AUTH_URL } from "@/utils/config";
 import { 
   ArrowRight, 
   GitBranch, 
@@ -130,7 +131,7 @@ export default function HomePage() {
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
           <Link
-            href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/auth/github`}
+            href={GITHUB_AUTH_URL}
             className="flex items-center gap-2 px-8 py-4 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all font-semibold text-lg shadow-lg shadow-primary/20"
           >
             <GitBranch size={20} />
@@ -310,7 +311,7 @@ export default function HomePage() {
                     </div>
 
                     <Link
-                      href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/auth/github`}
+                      href={GITHUB_AUTH_URL}
                       className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-indigo-600 font-semibold hover:text-indigo-800 group"
                     >
                       <span className="group-hover:translate-x-1 transition-transform">

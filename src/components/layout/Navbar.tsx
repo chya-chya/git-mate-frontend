@@ -1,6 +1,7 @@
 "use client";
 
 import { useUserStore } from "@/store/useUserStore";
+import { GITHUB_AUTH_URL } from "@/utils/config";
 import { Moon, Sun, GitBranch } from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
@@ -70,7 +71,7 @@ export default function Navbar({ children }: { children?: ReactNode }) {
             </div>
           ) : (
             <Link
-              href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/auth/github`}
+              href={GITHUB_AUTH_URL}
               className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all font-medium"
             >
               <GitBranch size={18} />
