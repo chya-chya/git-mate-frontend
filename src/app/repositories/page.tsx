@@ -20,7 +20,7 @@ export default function RepositoriesPage() {
   const { isAuthenticated } = useUserStore();
   const router = useRouter();
   const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState<"pinned" | "name" | "lastSync">("pinned");
+  const [sortBy, setSortBy] = useState<"name" | "lastSync">("name");
   const [filterBy, setFilterBy] = useState<"all" | "analyzed" | "notAnalyzed">("all");
   const [pinnedRepoIds, setPinnedRepoIds] = useState<string[]>(() => {
     if (typeof window !== "undefined") {
@@ -87,7 +87,7 @@ export default function RepositoriesPage() {
       return bTime - aTime;
     }
     
-    return a.fullName.localeCompare(b.fullName);
+    return 0;
   }) : [];
 
   return (
@@ -111,10 +111,9 @@ export default function RepositoriesPage() {
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as "pinned" | "name" | "lastSync")}
+              onChange={(e) => setSortBy(e.target.value as "name" | "lastSync")}
               className="px-3 py-2 border rounded-lg bg-background text-sm outline-none focus:ring-2 focus:ring-primary cursor-pointer border-slate-200 text-muted-foreground hover:bg-accent hover:text-foreground transition-all"
             >
-              <option value="pinned">즐겨찾기 우선</option>
               <option value="name">이름순 (A-Z)</option>
               <option value="lastSync">마지막 분석 최신순</option>
             </select>
