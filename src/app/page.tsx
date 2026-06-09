@@ -9,7 +9,7 @@ import {
   Sparkles, 
   Code2, 
   GitPullRequest, 
-  LineChart, 
+  Radar,
   CheckCircle2, 
   BrainCircuit, 
   TrendingUp,
@@ -172,11 +172,11 @@ export default function HomePage() {
           {/* Feature 3 */}
           <div className="space-y-4 text-center p-6 rounded-2xl bg-accent/5">
             <div className="inline-flex items-center justify-center p-3 bg-indigo-500/10 rounded-2xl mb-2">
-              <LineChart className="w-8 h-8 text-indigo-500" />
+              <Radar className="w-8 h-8 text-indigo-500" />
             </div>
-            <h2 className="text-xl font-bold tracking-tight">실시간 성장 추적</h2>
+            <h2 className="text-xl font-bold tracking-tight">5대 핵심 역량 입체 진단</h2>
             <p className="text-muted-foreground leading-relaxed text-sm">
-              대형 레포지토리에서도 최신 작업 내역이 곧바로 반영되어, 복잡한 설정 없이 당신의 성장 트렌드를 확인할 수 있습니다.
+              코드 신뢰도, 커뮤니케이션, 협업 마인드 등 개발자에게 꼭 필요한 5대 지표를 레이더 차트로 시각화하여 나의 강약점 밸런스를 직관적으로 보여줍니다.
             </p>
           </div>
         </div>
