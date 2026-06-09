@@ -138,12 +138,6 @@ export default function HomePage() {
             <span>GitHub으로 시작하기</span>
             <ArrowRight size={18} className="ml-1" />
           </Link>
-          <Link
-            href="#features"
-            className="px-8 py-4 bg-transparent border border-muted hover:bg-accent/50 transition-all rounded-xl font-semibold text-lg"
-          >
-            기능 살펴보기
-          </Link>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 py-24 mt-12 border-t border-muted-foreground/10">
