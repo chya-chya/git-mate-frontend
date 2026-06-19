@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useUserStore } from "@/store/useUserStore";
 import { GitBranch, Search, Play, Loader2, Pin, Clock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/services/api";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "@/components/ui/Toast";
 
 interface Repository {
   id: number;
@@ -19,6 +20,7 @@ interface Repository {
 export default function RepositoriesPage() {
   const { isAuthenticated } = useUserStore();
   const router = useRouter();
+  const { addToast } = useToast();
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "lastSync">("name");
   const [filterBy, setFilterBy] = useState<"all" | "analyzed" | "notAnalyzed">("all");
@@ -48,7 +50,7 @@ export default function RepositoriesPage() {
   };
 
   // 저장소 목록 조회
-  const { data: repos, isLoading, error } = useQuery<Repository[]>({
+  const { data: repos, isLoading, error, refetch } = useQuery<Repository[]>({
     queryKey: ["repositories"],
     queryFn: async () => {
       const { data } = await api.get("/collection/repos");
@@ -57,6 +59,16 @@ export default function RepositoriesPage() {
     enabled: isAuthenticated,
   });
 
+  useEffect(() => {
+    if (!isAuthenticated || typeof window === "undefined") return;
+
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get("status") !== "updated") return;
+
+    refetch();
+    addToast("분석할 저장소 목록이 업데이트되었습니다.", "success");
+    router.replace("/repositories");
+  }, [addToast, isAuthenticated, refetch, router]);
 
   if (!isAuthenticated) return null;
 

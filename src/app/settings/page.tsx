@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 import { useToast } from "@/components/ui/Toast";
-import { API_BASE_URL } from "@/utils/config";
+import { githubAppService, type GithubInstallation } from "@/services/githubApp";
 import { userService } from "@/services/user";
 import { useUserStore } from "@/store/useUserStore";
 
@@ -26,10 +26,11 @@ const dangerCopy = {
 export default function SettingsPage() {
   const router = useRouter();
   const { addToast } = useToast();
-  const { user, accessToken, isAuthenticated, logout } = useUserStore();
+  const { user, isAuthenticated, logout } = useUserStore();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
-  const [isReauthorizing, setIsReauthorizing] = useState(false);
+  const [isOpeningAppSettings, setIsOpeningAppSettings] = useState(false);
+  const [installationOptions, setInstallationOptions] = useState<GithubInstallation[]>([]);
 
   const isConfirmValid = confirmText.trim() === CONFIRM_WORD || confirmText.trim() === user?.username;
 
@@ -61,54 +62,64 @@ export default function SettingsPage() {
     deactivateMutation.mutate();
   };
 
-  const handleGitHubReauthorize = async () => {
-    if (isReauthorizing) return;
+  const handleGitHubAppSettings = async () => {
+    if (isOpeningAppSettings) return;
 
-    const token =
-      accessToken ||
-      (typeof window !== "undefined" ? localStorage.getItem("access_token") : null);
-
-    if (!token) {
-      logout();
-      addToast("로그인이 만료되었습니다. 다시 로그인해 주세요.", "error");
-      router.push("/");
-      return;
-    }
-
-    setIsReauthorizing(true);
+    setIsOpeningAppSettings(true);
+    setInstallationOptions([]);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/github/reauthorize-url`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json().catch(() => null);
+      const installations = await githubAppService.getInstallations();
+      const activeInstallations = installations.filter(
+        (installation) => installation.status === "ACTIVE" && installation.settingsUrl
+      );
 
-      if (response.status === 401) {
+      if (activeInstallations.length === 0) {
+        addToast("GitHub App 설치가 필요합니다.", "info");
+        const { url } = await githubAppService.getInstallUrl();
+        window.location.href = url;
+        return;
+      }
+
+      if (activeInstallations.length === 1) {
+        window.location.href = activeInstallations[0].settingsUrl;
+        return;
+      }
+
+      setInstallationOptions(activeInstallations);
+    } catch (error: unknown) {
+      const status = typeof error === "object" && error !== null && "response" in error
+        ? (error as { response?: { status?: number; data?: { code?: string } } }).response?.status
+        : undefined;
+      const code = typeof error === "object" && error !== null && "response" in error
+        ? (error as { response?: { data?: { code?: string } } }).response?.data?.code
+        : undefined;
+
+      if (status === 401) {
         logout();
         addToast("로그인이 만료되었습니다. 다시 로그인해 주세요.", "error");
         router.push("/");
         return;
       }
 
-      if (response.status === 403 && data?.code === "ACCOUNT_DEACTIVATED") {
-        addToast("비활성화된 계정입니다. 계정 상태를 확인해 주세요.", "error");
+      if (status === 403) {
+        addToast(
+          code === "ACCOUNT_DEACTIVATED"
+            ? "비활성화된 계정입니다. 계정 상태를 확인해 주세요."
+            : "GitHub App 접근 권한이 없습니다.",
+          "error"
+        );
         return;
       }
 
-      if (!response.ok || !data?.url) {
-        addToast("GitHub 권한 재승인 URL을 가져오지 못했습니다.", "error");
-        return;
-      }
-
-      window.location.href = data.url;
-    } catch {
-      addToast("GitHub 권한 재승인 URL을 가져오지 못했습니다.", "error");
+      addToast("GitHub App 설정 화면을 열 수 없습니다.", "error");
     } finally {
-      setIsReauthorizing(false);
+      setIsOpeningAppSettings(false);
     }
+  };
+
+  const handleSelectInstallation = (installation: GithubInstallation) => {
+    window.location.href = installation.settingsUrl;
   };
 
   if (!isAuthenticated) return null;
@@ -117,7 +128,7 @@ export default function SettingsPage() {
     <div className="p-8 space-y-8 animate-in fade-in duration-500">
       <header className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">설정</h1>
-        <p className="text-muted-foreground">GitHub 연동과 계정 삭제를 관리합니다.</p>
+        <p className="text-muted-foreground">GitHub App 저장소 선택과 계정 삭제를 관리합니다.</p>
       </header>
 
       <section className="rounded-xl border bg-card p-6 shadow-sm">
@@ -129,19 +140,19 @@ export default function SettingsPage() {
             <div>
               <h2 className="text-lg font-bold">GitHub 연동</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                저장소와 리뷰 데이터를 다시 가져와야 할 때 GitHub 권한을 재승인할 수 있습니다.
+                GitHub App에서 Git-Mate가 읽을 저장소를 선택합니다.
               </p>
             </div>
           </div>
 
           <button
             type="button"
-            onClick={handleGitHubReauthorize}
-            disabled={isReauthorizing}
+            onClick={handleGitHubAppSettings}
+            disabled={isOpeningAppSettings}
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            {isReauthorizing ? <Loader2 size={16} className="animate-spin" /> : <ExternalLink size={16} />}
-            GitHub 권한 재승인
+            {isOpeningAppSettings ? <Loader2 size={16} className="animate-spin" /> : <ExternalLink size={16} />}
+            분석할 저장소 변경
           </button>
         </div>
       </section>
@@ -228,6 +239,61 @@ export default function SettingsPage() {
                 {deactivateMutation.isPending && <Loader2 size={16} className="animate-spin" />}
                 {dangerCopy.button}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {installationOptions.length > 0 && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 px-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="installation-select-title"
+            className="w-full max-w-2xl rounded-xl border bg-background p-6 shadow-2xl"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 id="installation-select-title" className="text-xl font-bold">
+                  GitHub 계정 선택
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  저장소 선택을 변경할 GitHub App 설치 계정을 선택하세요.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setInstallationOptions([])}
+                className="rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors hover:bg-accent"
+              >
+                닫기
+              </button>
+            </div>
+
+            <div className="mt-5 space-y-3">
+              {installationOptions.map((installation) => (
+                <button
+                  key={installation.installationId}
+                  type="button"
+                  onClick={() => handleSelectInstallation(installation)}
+                  className="flex w-full flex-col gap-3 rounded-lg border p-4 text-left transition-colors hover:border-primary hover:bg-accent/50 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-bold">{installation.accountLogin}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {installation.accountType === "ORGANIZATION" ? "조직" : "개인"} 계정
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2 text-xs">
+                    <span className="rounded-full border px-2 py-1 font-semibold">
+                      {installation.repositorySelection}
+                    </span>
+                    <span className="rounded-full border px-2 py-1 font-semibold text-green-600 dark:text-green-400">
+                      {installation.status}
+                    </span>
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
         </div>
