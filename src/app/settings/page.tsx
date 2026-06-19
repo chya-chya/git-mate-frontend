@@ -8,7 +8,6 @@ import {
   ExternalLink,
   GitBranch,
   Loader2,
-  LockKeyhole,
 } from "lucide-react";
 
 import { useToast } from "@/components/ui/Toast";
@@ -16,33 +15,23 @@ import { API_BASE_URL } from "@/utils/config";
 import { userService } from "@/services/user";
 import { useUserStore } from "@/store/useUserStore";
 
-type DangerAction = "deactivate" | "unlink";
-
 const CONFIRM_WORD = "계정 삭제";
 
-const dangerCopy: Record<DangerAction, { title: string; button: string; description: string }> = {
-  deactivate: {
-    title: "계정 삭제",
-    button: "계정 삭제",
-    description: "Git-Mate 계정 삭제를 진행합니다.",
-  },
-  unlink: {
-    title: "GitHub 연동 해제",
-    button: "GitHub 연동 해제",
-    description: "GitHub 연동을 해제하면 계정 삭제와 동일하게 처리됩니다.",
-  },
+const dangerCopy = {
+  title: "계정 삭제",
+  button: "계정 삭제",
+  description: "Git-Mate 계정 삭제를 진행합니다.",
 };
 
 export default function SettingsPage() {
   const router = useRouter();
   const { addToast } = useToast();
   const { user, accessToken, isAuthenticated, logout } = useUserStore();
-  const [dangerAction, setDangerAction] = useState<DangerAction | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const [isReauthorizing, setIsReauthorizing] = useState(false);
 
   const isConfirmValid = confirmText.trim() === CONFIRM_WORD || confirmText.trim() === user?.username;
-  const activeDangerCopy = dangerAction ? dangerCopy[dangerAction] : null;
 
   const deactivateMutation = useMutation({
     mutationFn: userService.deactivateAccount,
@@ -56,14 +45,14 @@ export default function SettingsPage() {
     },
   });
 
-  const openDangerModal = (action: DangerAction) => {
-    setDangerAction(action);
+  const openDeleteModal = () => {
+    setIsDeleteModalOpen(true);
     setConfirmText("");
   };
 
-  const closeDangerModal = () => {
+  const closeDeleteModal = () => {
     if (deactivateMutation.isPending) return;
-    setDangerAction(null);
+    setIsDeleteModalOpen(false);
     setConfirmText("");
   };
 
@@ -173,7 +162,7 @@ export default function SettingsPage() {
 
           <button
             type="button"
-            onClick={() => openDangerModal("deactivate")}
+            onClick={openDeleteModal}
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
           >
             <AlertTriangle size={16} />
@@ -182,32 +171,7 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      <section className="rounded-xl border border-red-500/20 bg-red-500/[0.03] p-6 shadow-sm">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-500/10 text-red-600 dark:text-red-400">
-              <LockKeyhole size={20} />
-            </span>
-            <div>
-              <h2 className="text-lg font-bold text-red-700 dark:text-red-300">위험 작업</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                GitHub 연동 해제는 Git-Mate 계정 삭제와 동일하게 처리됩니다.
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => openDangerModal("unlink")}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
-          >
-            <AlertTriangle size={16} />
-            GitHub 연동 해제
-          </button>
-        </div>
-      </section>
-
-      {activeDangerCopy && (
+      {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 px-4">
           <div
             role="dialog"
@@ -221,9 +185,9 @@ export default function SettingsPage() {
               </span>
               <div>
                 <h2 id="danger-action-title" className="text-xl font-bold">
-                  {activeDangerCopy.title}
+                  {dangerCopy.title}
                 </h2>
-                <p className="mt-1 text-sm text-muted-foreground">{activeDangerCopy.description}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{dangerCopy.description}</p>
               </div>
             </div>
 
@@ -249,7 +213,7 @@ export default function SettingsPage() {
             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button
                 type="button"
-                onClick={closeDangerModal}
+                onClick={closeDeleteModal}
                 disabled={deactivateMutation.isPending}
                 className="rounded-lg border px-4 py-2 text-sm font-semibold transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
               >
@@ -262,7 +226,7 @@ export default function SettingsPage() {
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {deactivateMutation.isPending && <Loader2 size={16} className="animate-spin" />}
-                {activeDangerCopy.button}
+                {dangerCopy.button}
               </button>
             </div>
           </div>
