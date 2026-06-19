@@ -8,6 +8,7 @@ import { api } from "@/services/api";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/components/ui/Toast";
+import { githubAppService } from "@/services/githubApp";
 
 interface Repository {
   id: number;
@@ -24,6 +25,7 @@ export default function RepositoriesPage() {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "lastSync">("name");
   const [filterBy, setFilterBy] = useState<"all" | "analyzed" | "notAnalyzed">("all");
+  const [isOpeningInstallUrl, setIsOpeningInstallUrl] = useState(false);
   const [pinnedRepoIds, setPinnedRepoIds] = useState<string[]>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("pinned_repos");
@@ -49,6 +51,20 @@ export default function RepositoriesPage() {
     });
   };
 
+  const {
+    data: installations,
+    isLoading: isInstallationsLoading,
+    error: installationsError,
+    refetch: refetchInstallations,
+  } = useQuery({
+    queryKey: ["github-app-installations"],
+    queryFn: githubAppService.getInstallations,
+    enabled: isAuthenticated,
+  });
+
+  const activeInstallations = installations?.filter((installation) => installation.status === "ACTIVE") ?? [];
+  const hasActiveInstallation = activeInstallations.length > 0;
+
   // 저장소 목록 조회
   const { data: repos, isLoading, error, refetch } = useQuery<Repository[]>({
     queryKey: ["repositories"],
@@ -56,8 +72,37 @@ export default function RepositoriesPage() {
       const { data } = await api.get("/collection/repos");
       return data;
     },
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && hasActiveInstallation,
   });
+
+  useEffect(() => {
+    if (!installationsError) return;
+
+    const status = typeof installationsError === "object" && installationsError !== null && "response" in installationsError
+      ? (installationsError as { response?: { status?: number; data?: { code?: string } } }).response?.status
+      : undefined;
+    const code = typeof installationsError === "object" && installationsError !== null && "response" in installationsError
+      ? (installationsError as { response?: { data?: { code?: string } } }).response?.data?.code
+      : undefined;
+
+    if (status === 401) {
+      addToast("로그인이 만료되었습니다. 다시 로그인해 주세요.", "error");
+      router.push("/");
+      return;
+    }
+
+    if (status === 403) {
+      addToast(
+        code === "ACCOUNT_DEACTIVATED"
+          ? "비활성화된 계정입니다. 계정 상태를 확인해 주세요."
+          : "GitHub App 접근 권한이 없습니다.",
+        "error"
+      );
+      return;
+    }
+
+    addToast("GitHub App 설치 상태를 확인할 수 없습니다.", "error");
+  }, [addToast, installationsError, router]);
 
   useEffect(() => {
     if (!isAuthenticated || typeof window === "undefined") return;
@@ -65,10 +110,36 @@ export default function RepositoriesPage() {
     const searchParams = new URLSearchParams(window.location.search);
     if (searchParams.get("status") !== "updated") return;
 
+    refetchInstallations();
     refetch();
     addToast("분석할 저장소 목록이 업데이트되었습니다.", "success");
     router.replace("/repositories");
-  }, [addToast, isAuthenticated, refetch, router]);
+  }, [addToast, isAuthenticated, refetch, refetchInstallations, router]);
+
+  const handleInstallGitHubApp = async () => {
+    if (isOpeningInstallUrl) return;
+
+    setIsOpeningInstallUrl(true);
+
+    try {
+      const { url } = await githubAppService.getInstallUrl();
+      window.location.href = url;
+    } catch (error: unknown) {
+      const status = typeof error === "object" && error !== null && "response" in error
+        ? (error as { response?: { status?: number } }).response?.status
+        : undefined;
+
+      if (status === 401) {
+        addToast("로그인이 만료되었습니다. 다시 로그인해 주세요.", "error");
+        router.push("/");
+        return;
+      }
+
+      addToast("GitHub App 설치 화면을 열 수 없습니다.", "error");
+    } finally {
+      setIsOpeningInstallUrl(false);
+    }
+  };
 
   if (!isAuthenticated) return null;
 
@@ -142,7 +213,37 @@ export default function RepositoriesPage() {
         </div>
       </header>
 
-      {isLoading ? (
+      {isInstallationsLoading ? (
+        <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4">
+          <Loader2 className="w-10 h-10 animate-spin text-primary" />
+          <p className="text-muted-foreground">GitHub App 설치 상태를 확인하고 있습니다...</p>
+        </div>
+      ) : installationsError ? (
+        <div className="p-12 text-center border rounded-2xl bg-destructive/5 text-destructive">
+          GitHub App 설치 상태를 확인할 수 없습니다.
+        </div>
+      ) : !hasActiveInstallation ? (
+        <div className="flex flex-col items-center justify-center min-h-[44vh] gap-5 rounded-2xl border bg-card p-12 text-center shadow-sm">
+          <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <GitBranch size={28} />
+          </span>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold">GitHub App 설치가 필요합니다</h2>
+            <p className="text-muted-foreground">
+              저장소를 분석하려면 Git-Mate GitHub App을 설치하고 읽을 저장소를 선택해 주세요.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleInstallGitHubApp}
+            disabled={isOpeningInstallUrl}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isOpeningInstallUrl ? <Loader2 size={16} className="animate-spin" /> : <GitBranch size={16} />}
+            GitHub App 설치하기
+          </button>
+        </div>
+      ) : isLoading ? (
         <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4">
           <Loader2 className="w-10 h-10 animate-spin text-primary" />
           <p className="text-muted-foreground">GitHub 저장소를 불러오고 있습니다...</p>
