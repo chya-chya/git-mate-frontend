@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import Image from "next/image";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import {
@@ -10,40 +9,38 @@ import {
   GitBranch,
   Loader2,
   LockKeyhole,
-  ShieldCheck,
-  UserRound,
 } from "lucide-react";
 
 import { useToast } from "@/components/ui/Toast";
-import { GITHUB_AUTH_URL } from "@/utils/config";
+import { API_BASE_URL } from "@/utils/config";
 import { userService } from "@/services/user";
 import { useUserStore } from "@/store/useUserStore";
 
 type DangerAction = "deactivate" | "unlink";
 
-const CONFIRM_WORD = "비활성화";
+const CONFIRM_WORD = "계정 삭제";
 
 const dangerCopy: Record<DangerAction, { title: string; button: string; description: string }> = {
   deactivate: {
-    title: "계정 비활성화",
-    button: "계정 비활성화",
-    description: "Git-Mate 계정을 비활성화합니다.",
+    title: "계정 삭제",
+    button: "계정 삭제",
+    description: "Git-Mate 계정 삭제를 진행합니다.",
   },
   unlink: {
     title: "GitHub 연동 해제",
     button: "GitHub 연동 해제",
-    description: "GitHub 연동을 해제하면 계정 비활성화와 동일하게 처리됩니다.",
+    description: "GitHub 연동을 해제하면 계정 삭제와 동일하게 처리됩니다.",
   },
 };
 
 export default function SettingsPage() {
   const router = useRouter();
   const { addToast } = useToast();
-  const { user, isAuthenticated, logout } = useUserStore();
+  const { user, accessToken, isAuthenticated, logout } = useUserStore();
   const [dangerAction, setDangerAction] = useState<DangerAction | null>(null);
   const [confirmText, setConfirmText] = useState("");
+  const [isReauthorizing, setIsReauthorizing] = useState(false);
 
-  const reauthorizeUrl = useMemo(() => `${GITHUB_AUTH_URL}?mode=reauthorize`, []);
   const isConfirmValid = confirmText.trim() === CONFIRM_WORD || confirmText.trim() === user?.username;
   const activeDangerCopy = dangerAction ? dangerCopy[dangerAction] : null;
 
@@ -51,11 +48,11 @@ export default function SettingsPage() {
     mutationFn: userService.deactivateAccount,
     onSuccess: () => {
       logout();
-      addToast("계정이 비활성화되었습니다.", "success");
+      addToast("계정 삭제가 완료되었습니다.", "success");
       router.push("/");
     },
     onError: () => {
-      addToast("계정 비활성화에 실패했습니다. 잠시 후 다시 시도해 주세요.", "error");
+      addToast("계정 삭제에 실패했습니다. 잠시 후 다시 시도해 주세요.", "error");
     },
   });
 
@@ -75,82 +72,64 @@ export default function SettingsPage() {
     deactivateMutation.mutate();
   };
 
+  const handleGitHubReauthorize = async () => {
+    if (isReauthorizing) return;
+
+    const token =
+      accessToken ||
+      (typeof window !== "undefined" ? localStorage.getItem("access_token") : null);
+
+    if (!token) {
+      logout();
+      addToast("로그인이 만료되었습니다. 다시 로그인해 주세요.", "error");
+      router.push("/");
+      return;
+    }
+
+    setIsReauthorizing(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/github/reauthorize-url`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json().catch(() => null);
+
+      if (response.status === 401) {
+        logout();
+        addToast("로그인이 만료되었습니다. 다시 로그인해 주세요.", "error");
+        router.push("/");
+        return;
+      }
+
+      if (response.status === 403 && data?.code === "ACCOUNT_DEACTIVATED") {
+        addToast("비활성화된 계정입니다. 계정 상태를 확인해 주세요.", "error");
+        return;
+      }
+
+      if (!response.ok || !data?.url) {
+        addToast("GitHub 권한 재승인 URL을 가져오지 못했습니다.", "error");
+        return;
+      }
+
+      window.location.href = data.url;
+    } catch {
+      addToast("GitHub 권한 재승인 URL을 가져오지 못했습니다.", "error");
+    } finally {
+      setIsReauthorizing(false);
+    }
+  };
+
   if (!isAuthenticated) return null;
 
   return (
     <div className="p-8 space-y-8 animate-in fade-in duration-500">
       <header className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">설정</h1>
-        <p className="text-muted-foreground">계정 상태와 GitHub 연동을 관리합니다.</p>
+        <p className="text-muted-foreground">GitHub 연동과 계정 삭제를 관리합니다.</p>
       </header>
-
-      <section className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2 rounded-xl border bg-card p-6 shadow-sm">
-          <div className="flex items-start justify-between gap-4 border-b pb-5">
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <UserRound size={20} />
-              </span>
-              <div>
-                <h2 className="text-lg font-bold">계정 상태</h2>
-                <p className="text-sm text-muted-foreground">현재 로그인된 GitHub 계정입니다.</p>
-              </div>
-            </div>
-            <span className="rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1 text-xs font-semibold text-green-600 dark:text-green-400">
-              활성
-            </span>
-          </div>
-
-          <div className="mt-6 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex min-w-0 items-center gap-4">
-              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border bg-muted">
-                {user?.avatarUrl ? (
-                  <Image src={user.avatarUrl} alt={user.username} fill sizes="64px" className="object-cover" />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-xl font-bold text-muted-foreground">
-                    {user?.username?.charAt(0).toUpperCase() || "G"}
-                  </div>
-                )}
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-xl font-bold">@{user?.username || "unknown"}</p>
-                <p className="text-sm text-muted-foreground">GitHub OAuth로 인증된 계정</p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => openDangerModal("deactivate")}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-500/30 px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-500/10 dark:text-red-400"
-            >
-              <AlertTriangle size={16} />
-              계정 비활성화
-            </button>
-          </div>
-        </div>
-
-        <div className="rounded-xl border bg-card p-6 shadow-sm">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-500">
-              <ShieldCheck size={20} />
-            </span>
-            <div>
-              <h2 className="text-lg font-bold">보안 상태</h2>
-              <p className="text-sm text-muted-foreground">세션이 유지 중입니다.</p>
-            </div>
-          </div>
-          <div className="mt-6 space-y-3 text-sm">
-            <div className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2">
-              <span className="text-muted-foreground">로그인 방식</span>
-              <span className="font-semibold">GitHub OAuth</span>
-            </div>
-            <div className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2">
-              <span className="text-muted-foreground">계정 권한</span>
-              <span className="font-semibold">사용자 본인</span>
-            </div>
-          </div>
-        </div>
-      </section>
 
       <section className="rounded-xl border bg-card p-6 shadow-sm">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
@@ -166,13 +145,40 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <a
-            href={reauthorizeUrl}
+          <button
+            type="button"
+            onClick={handleGitHubReauthorize}
+            disabled={isReauthorizing}
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            <ExternalLink size={16} />
+            {isReauthorizing ? <Loader2 size={16} className="animate-spin" /> : <ExternalLink size={16} />}
             GitHub 권한 재승인
-          </a>
+          </button>
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-red-500/20 bg-card p-6 shadow-sm">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-500/10 text-red-600 dark:text-red-400">
+              <AlertTriangle size={20} />
+            </span>
+            <div>
+              <h2 className="text-lg font-bold text-red-700 dark:text-red-300">계정 삭제</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Git-Mate 로그인을 사용할 수 없고 저장소 분석을 새로 실행할 수 없습니다.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => openDangerModal("deactivate")}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+          >
+            <AlertTriangle size={16} />
+            계정 삭제
+          </button>
         </div>
       </section>
 
@@ -185,7 +191,7 @@ export default function SettingsPage() {
             <div>
               <h2 className="text-lg font-bold text-red-700 dark:text-red-300">위험 작업</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                GitHub 연동 해제는 Git-Mate 계정 비활성화와 동일하게 처리됩니다.
+                GitHub 연동 해제는 Git-Mate 계정 삭제와 동일하게 처리됩니다.
               </p>
             </div>
           </div>
