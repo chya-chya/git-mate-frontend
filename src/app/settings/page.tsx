@@ -128,7 +128,7 @@ export default function SettingsPage() {
     <div className="p-8 space-y-8 animate-in fade-in duration-500">
       <header className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">설정</h1>
-        <p className="text-muted-foreground">GitHub App 저장소 선택과 계정 삭제를 관리합니다.</p>
+        <p className="text-muted-foreground">GitHub App 저장소 선택을 관리합니다.</p>
       </header>
 
       <section className="rounded-xl border bg-card p-6 shadow-sm">
@@ -157,6 +157,7 @@ export default function SettingsPage() {
         </div>
       </section>
 
+      {false && (
       <section className="rounded-xl border border-red-500/20 bg-card p-6 shadow-sm">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-3">
@@ -181,6 +182,7 @@ export default function SettingsPage() {
           </button>
         </div>
       </section>
+      )}
 
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 px-4">
