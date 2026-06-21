@@ -11,6 +11,7 @@ import {
   GitPullRequest, 
   Radar,
   CheckCircle2, 
+  ShieldCheck,
   BrainCircuit, 
   TrendingUp,
   Lightbulb,
@@ -128,6 +129,9 @@ export default function HomePage() {
           Git-Mate는 LLM을 기반으로 당신의 PR 코멘트, 커뮤니케이션 스타일 및 개발 성과를 정밀하게 분석하여 
           더 나은 개발자로 성장할 수 있는 인사이트를 제공합니다.
         </p>
+        <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
+          소스 코드를 읽지 않고, GitHub App에서 허용한 저장소의 PR/리뷰/코멘트만 분석합니다.
+        </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
           <Link
@@ -146,9 +150,9 @@ export default function HomePage() {
             <div className="inline-flex items-center justify-center p-3 bg-blue-500/10 rounded-2xl mb-2">
               <Code2 className="w-8 h-8 text-blue-500" />
             </div>
-            <h2 className="text-xl font-bold tracking-tight">문맥 인식 코드 분석</h2>
+            <h2 className="text-xl font-bold tracking-tight">PR 문맥 기반 분석</h2>
             <p className="text-muted-foreground leading-relaxed text-sm">
-              코드 몇 줄을 작성했는지가 전부가 아닙니다. Git-Mate는 문맥을 이해하고, 프로젝트에 기여한 당신의 진짜 역량을 분석합니다.
+              PR 설명, 리뷰, 코멘트에서 드러나는 협업 방식과 커뮤니케이션 역량을 분석합니다.
             </p>
           </div>
 
@@ -172,6 +176,39 @@ export default function HomePage() {
             <p className="text-muted-foreground leading-relaxed text-sm">
               코드 신뢰도, 커뮤니케이션, 협업 마인드 등 개발자에게 꼭 필요한 5대 지표를 레이더 차트로 시각화하여 나의 강약점 밸런스를 직관적으로 보여줍니다.
             </p>
+          </div>
+        </div>
+
+        <div className="py-20 border-t border-muted-foreground/10 space-y-8">
+          <div className="text-center space-y-3">
+            <div className="inline-flex items-center justify-center p-3 bg-emerald-500/10 rounded-2xl">
+              <ShieldCheck className="w-8 h-8 text-emerald-500" />
+            </div>
+            <h2 className="text-3xl font-bold tracking-tight">권한 범위를 투명하게 관리합니다</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Git-Mate는 분석에 필요한 PR/리뷰/코멘트 데이터만 사용하며, GitHub App에서 사용자가 허용한 저장소 범위 안에서만 동작합니다.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+            <div className="rounded-2xl border bg-background/70 p-6 shadow-sm space-y-3">
+              <h3 className="font-bold text-lg">소스 코드는 읽지 않음</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Git-Mate는 저장소의 소스 코드를 읽거나 평가하지 않습니다. PR 설명, 리뷰, 코멘트만으로 협업 역량을 분석합니다.
+              </p>
+            </div>
+            <div className="rounded-2xl border bg-background/70 p-6 shadow-sm space-y-3">
+              <h3 className="font-bold text-lg">허용한 저장소만 접근</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                GitHub App 설치 시 사용자가 선택한 저장소만 분석 대상이 됩니다.
+              </p>
+            </div>
+            <div className="rounded-2xl border bg-background/70 p-6 shadow-sm space-y-3">
+              <h3 className="font-bold text-lg">허용하지 않은 저장소는 제외</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                선택하지 않은 저장소의 데이터는 가져오지 않으며, 분석 대상에도 포함하지 않습니다.
+              </p>
+            </div>
           </div>
         </div>
 
