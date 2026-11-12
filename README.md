@@ -39,8 +39,8 @@
 | 서비스 소개 · 데모 리포트 | `/` | 분석 방식과 권한 범위를 안내하고, 로그인 없이 예시 리포트를 체험할 수 있습니다. 지표 카드를 누르면 지표별 AI 진단, 성장 가이드, 추천 피드백 문장이 바뀝니다. |
 | GitHub 로그인 | `/auth/callback` | GitHub 계정으로 로그인합니다. |
 | 대시보드 | `/dashboard` | 최근 역량 분석 결과를 레이더 차트로 보여줍니다. |
-| 저장소 분석 | `/repositories` | GitHub App으로 허용한 저장소를 보고, 저장소별 분석을 실행합니다. |
-| 분석 진행 · 리포트 | `/analysis/[id]` | 분석 진행 상태를 확인하고, 완료되면 8개 협업 역량 지표와 코칭을 보여줍니다. 리포트를 이미지 카드로 저장하거나 공개 링크로 공유할 수 있습니다. |
+| 저장소 분석 | `/repositories` | GitHub App으로 허용한 저장소를 보고, 예상 토큰을 확인한 뒤 분석을 요청합니다. 분석은 백그라운드 Job으로 진행되며 단계별 진행률을 보여줍니다. |
+| 분석 리포트 | `/analysis/[id]` | 8개 협업 역량 지표와 코칭을 보여줍니다. 리포트를 이미지 카드로 저장하거나 공개 링크로 공유할 수 있습니다. |
 | 보고서 관리 | `/analysis-reports` | 내 전체 분석 보고서와 공유 중인 리포트를 한곳에서 관리합니다. |
 | 공개 리포트 | `/public`, `/public/[username]` | 공유된 개발자 리포트를 탐색하고 열람합니다. |
 | 설정 | `/settings` | GitHub App 저장소 선택을 관리하고 계정을 삭제할 수 있습니다. |
@@ -76,7 +76,11 @@ flowchart LR
 
 ## 5. 구현 포인트
 
-- **분석 진행 상태 폴링:** TanStack Query의 `refetchInterval`로 3초마다 상태를 조회하고, `completed` 또는 `failed`가 되면 자동으로 폴링을 멈춥니다. (`src/hooks/useAnalysisStatus.ts`)
+- **비동기 분석 Job 연동:** 분석 요청을 `POST /analysis/jobs`로 접수하고, TanStack Query의 `refetchInterval`로 2초마다 상태를 조회해 수집·분석·저장 단계와 진행률을 보여줍니다. 완료되면 폴링을 멈추고 리포트로 이동합니다. (`src/services/analysisJob.ts`, `src/app/repositories/[githubRepoId]/analyze/page.tsx`)
+  - Job ID를 URL에 남겨, 새로고침하거나 페이지를 떠났다 돌아와도 진행 상황을 이어서 봅니다.
+  - `Idempotency-Key` 헤더로 중복 클릭이 중복 Job을 만들지 않게 하고, 이미 진행 중인 Job이 있으면(`409`) 그 Job을 이어서 추적합니다.
+  - 실패 코드를 사용자 안내 문구로 바꾸고, 재시도 가능한 실패는 `다시 시도` 버튼으로 재접수합니다.
+  - 백엔드에서 비동기 경로가 꺼져 있으면(`503 ASYNC_ANALYSIS_DISABLED`) 기존 동기 API로 자동 전환합니다.
 - **역할에 따른 상태 분리:** 서버 데이터는 TanStack Query 캐시로, 로그인 사용자 정보는 Zustand 스토어로 관리합니다.
 - **리포트 공유:** 리포트를 PNG 분석 카드로 내보내거나(html-to-image), 공개 전환 후 `/public/[username]` 링크로 공유할 수 있습니다.
 - **권한 투명성:** 랜딩과 설정 화면에서 GitHub App이 접근하는 범위(허용한 저장소의 PR·리뷰·코멘트)를 명확히 안내합니다.
