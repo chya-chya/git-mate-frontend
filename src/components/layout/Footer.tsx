@@ -1,6 +1,6 @@
 "use client";
 
-import { Mail } from "lucide-react";
+import { GitBranch, Mail } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -22,9 +22,14 @@ export default function Footer() {
         <div className="space-y-4">
           <h4 className="font-semibold">Developer</h4>
           <div className="space-y-2 text-sm text-muted-foreground">
-            <p className="flex items-center gap-2 font-medium text-foreground">
-              © 2026 chaya-chaya
-            </p>
+            <a
+              href="https://github.com/chya-chya"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 font-medium text-foreground hover:text-primary transition-colors"
+            >
+              <GitBranch size={14} /> chya-chya
+            </a>
             <p className="flex items-center gap-2">
               <Mail size={14} /> cktndus32@naver.com
             </p>

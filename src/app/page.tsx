@@ -174,7 +174,7 @@ export default function HomePage() {
             </div>
             <h2 className="text-xl font-bold tracking-tight">5대 핵심 역량 입체 진단</h2>
             <p className="text-muted-foreground leading-relaxed text-sm">
-              코드 신뢰도, 커뮤니케이션, 협업 마인드 등 개발자에게 꼭 필요한 5대 지표를 레이더 차트로 시각화하여 나의 강약점 밸런스를 직관적으로 보여줍니다.
+              상호 존중, 문제 정의, 문서화 등 8개 세부 지표를 코드 신뢰도·커뮤니케이션·협업 마인드 등 5대 핵심 역량으로 묶어 레이더 차트로 시각화하고, 나의 강약점 밸런스를 직관적으로 보여줍니다.
             </p>
           </div>
         </div>
